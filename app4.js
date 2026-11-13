@@ -13,6 +13,7 @@ function formOrdem() {
       <input id="f-cliente_nome" value="${v('cliente_nome')}" autocomplete="off" placeholder="Digite o nome ou o telefone">
       <div id="sugestoes" class="sugestoes"></div>
       <label>Telefone / WhatsApp</label><input id="f-cliente_telefone" type="tel" inputmode="tel" placeholder="(85) 99999-9999" value="${v('cliente_telefone')}">
+      ${botaoContato('f-contato')}
       <div id="cliInfo"></div>
     </div>
     <div class="card">
@@ -43,7 +44,7 @@ function formOrdem() {
     ${editando ? '' : `
     <div class="card">
       <h3>Fotos do aparelho</h3>
-      <label class="btn sec full" style="margin:0">📷 Tirar / escolher fotos<input type="file" accept="image/*" multiple id="f-fotos" style="display:none"></label>
+      ${botoesFoto('f-fotos')}
       <div id="f-fotos-qtd" class="muted small" style="margin-top:6px">${S.novasFotos.length ? S.novasFotos.length + ' foto(s) selecionada(s)' : ''}</div>
     </div>`}
     <div class="btns" style="margin-bottom:24px"><button class="btn full" id="f-salvar">${editando ? 'Salvar alterações' : 'Cadastrar aparelho'}</button></div>
@@ -84,12 +85,18 @@ function formOrdem() {
     }
   };
   mostrarCliente();
+  // Depois de importar do celular: procura se o cliente já está cadastrado pelo telefone
+  ligarContato('f-contato', 'f-cliente_nome', 'f-cliente_telefone', () => {
+    if (!editando) cliSel = null;
+    $('sugestoes').innerHTML = '';
+    $('f-cliente_telefone').oninput();
+    mostrarCliente();
+  });
 
-  const fi = $('f-fotos');
-  if (fi) fi.onchange = (e) => {
-    S.novasFotos = S.novasFotos.concat(Array.from(e.target.files || []));
-    $('f-fotos-qtd').textContent = S.novasFotos.length + ' foto(s) selecionada(s)';
-  };
+  ligarFotos('f-fotos', (files) => {
+    S.novasFotos = S.novasFotos.concat(files);
+    $('f-fotos-qtd').textContent = S.novasFotos.length + ' foto(s) selecionada(s) — pode tirar mais';
+  });
   const btn = $('f-salvar');
   btn.onclick = async () => {
     const campos = {};

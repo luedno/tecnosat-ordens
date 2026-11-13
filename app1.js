@@ -73,6 +73,56 @@ function foneZap(t) {
 }
 function abrirZap(fone, texto) { window.open('https://wa.me/' + foneZap(fone) + '?text=' + encodeURIComponent(texto), '_blank'); }
 const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+// ---------- contatos do celular (só Android/Chrome) ----------
+const podeContatos = () => 'contacts' in navigator && 'ContactsManager' in window;
+function fmtFone(t) {
+  let d = digitos(t);
+  if (d.startsWith('55') && (d.length === 12 || d.length === 13)) d = d.slice(2);
+  if (d.length === 11) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+  if (d.length === 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+  if (d.length === 9) return d.slice(0, 5) + '-' + d.slice(5);
+  return String(t || '').trim();
+}
+const botaoContato = (id) => podeContatos() ? `<button type="button" class="btn sec full" id="${id}" style="margin-top:8px">📇 Puxar dos contatos do celular</button>` : '';
+// Abre a lista de contatos, a pessoa escolhe um, e preenche nome/telefone
+function ligarContato(botaoId, campoNome, campoFone, depois) {
+  const b = document.getElementById(botaoId); if (!b) return;
+  b.onclick = async () => {
+    try {
+      const lista = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+      if (!lista || !lista.length) return;
+      const c = lista[0];
+      const nome = (c.name && c.name[0]) || '';
+      const tels = (c.tel || []).filter(Boolean);
+      let tel = tels[0] || '';
+      if (tels.length > 1) {
+        const escolha = prompt('Este contato tem ' + tels.length + ' números. Digite o número da opção:\n\n' + tels.map((t, i) => (i + 1) + ') ' + fmtFone(t)).join('\n'), '1');
+        if (escolha === null) return;
+        tel = tels[Math.max(0, Math.min(tels.length - 1, parseInt(escolha, 10) - 1))] || tels[0];
+      }
+      if (nome) document.getElementById(campoNome).value = nome;
+      if (tel) document.getElementById(campoFone).value = fmtFone(tel);
+      if (depois) depois();
+      toast('✔ Contato importado');
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      erro(e, 'abrir contatos');
+    }
+  };
+}
+// Dois botões: câmera (abre direto a câmera) e galeria
+function botoesFoto(prefixo) {
+  return `<div class="btns" style="margin-top:0">
+    <label class="btn sec">📷 Tirar foto<input type="file" accept="image/*" capture="environment" id="${prefixo}-cam" style="display:none"></label>
+    <label class="btn sec">🖼️ Da galeria<input type="file" accept="image/*" multiple id="${prefixo}-gal" style="display:none"></label>
+  </div>`;
+}
+function ligarFotos(prefixo, aoEscolher) {
+  ['cam', 'gal'].forEach((t) => {
+    const el = document.getElementById(prefixo + '-' + t); if (!el) return;
+    el.onchange = (e) => { const f = Array.from(e.target.files || []); e.target.value = ''; if (f.length) aoEscolher(f); };
+  });
+}
 const linkCliente = (o) => location.origin + '/status.html?t=' + o.token;
 function ordensDoCliente(cli) {
   if (!cli) return [];

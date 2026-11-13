@@ -75,6 +75,7 @@ function formAgenda() {
       <label>Nome do cliente *</label><input id="a-cliente_nome" value="${v('cliente_nome')}" list="lista-cli">
       <datalist id="lista-cli">${S.clientes.slice(0, 500).map((c) => `<option value="${esc(c.nome)}">`).join('')}</datalist>
       <label>Telefone / WhatsApp</label><input id="a-cliente_telefone" type="tel" inputmode="tel" value="${v('cliente_telefone')}">
+      ${botaoContato('a-contato')}
       <label>Endereço</label><input id="a-endereco" value="${v('endereco')}" placeholder="Rua, número, bairro">
       <label>Aparelho</label><input id="a-aparelho" list="lista-ap2" value="${v('aparelho')}">
       <datalist id="lista-ap2">${APARELHOS.map((x) => `<option value="${x}">`).join('')}</datalist>
@@ -103,6 +104,11 @@ function formAgenda() {
     const c = S.clientes.find((x) => x.nome === $('a-cliente_nome').value);
     if (c) { if (!$('a-cliente_telefone').value) $('a-cliente_telefone').value = c.telefone || ''; if (!$('a-endereco').value) $('a-endereco').value = c.endereco || ''; }
   };
+  ligarContato('a-contato', 'a-cliente_nome', 'a-cliente_telefone', () => {
+    const d = digitos($('a-cliente_telefone').value);
+    const c = d.length >= 8 ? S.clientes.find((x) => x.telefone_digitos === d) : null;
+    if (c && !$('a-endereco').value) $('a-endereco').value = c.endereco || '';
+  });
   $('a-salvar').onclick = async (ev) => {
     const btn = ev.target;
     const dia = val('a-dia'), hora = val('a-hora');

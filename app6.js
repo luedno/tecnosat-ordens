@@ -65,6 +65,7 @@ function formCliente() {
     <div class="card">
       <label>Nome *</label><input id="k-nome" value="${v('nome')}">
       <label>Telefone / WhatsApp</label><input id="k-telefone" type="tel" inputmode="tel" value="${v('telefone')}">
+      ${botaoContato('k-contato')}
       <label>Endereço</label><input id="k-endereco" value="${v('endereco')}">
       <label>Observações</label><textarea id="k-obs">${v('observacoes')}</textarea>
     </div>
@@ -73,6 +74,7 @@ function formCliente() {
     <div id="k-erro"></div>
   `, { voltar: () => ir(S.clienteId ? 'cliente' : 'clientes'), semNav: true });
   const $ = (id) => document.getElementById(id);
+  ligarContato('k-contato', 'k-nome', 'k-telefone');
   $('k-salvar').onclick = async () => {
     const campos = { nome: val('k-nome'), telefone: val('k-telefone') || null, endereco: val('k-endereco') || null, observacoes: val('k-obs') || null };
     if (!campos.nome) return alert('Preencha o nome.');

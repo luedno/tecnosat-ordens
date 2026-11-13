@@ -125,8 +125,8 @@ function telaOrdem() {
       <h3>Fotos (${o.fotos.length})</h3>
       <div class="fotos">
         ${o.fotos.map((p) => `<img data-path="${esc(p)}" alt="foto">`).join('')}
-        <label class="add-foto">📷<br>Adicionar foto<input type="file" accept="image/*" multiple id="addFoto"></label>
       </div>
+      ${botoesFoto('addFoto')}
       <div id="fotoStatus" class="muted small"></div>
     </div>
 
@@ -181,10 +181,7 @@ function telaOrdem() {
     $('orcValor').dataset.orig = $('orcValor').value; $('orcDet').dataset.orig = $('orcDet').value;
     atualizarTela();
   };
-  $('addFoto').onchange = async (e) => {
-    const files = Array.from(e.target.files || []); if (!files.length) return;
-    await enviarFotos(o.id, files, $('fotoStatus'));
-  };
+  ligarFotos('addFoto', (files) => enviarFotos(o.id, files, $('fotoStatus')));
   const enviarNota = async () => {
     const n = $('nota'); const texto = n.value.trim(); if (!texto) return;
     $('addNota').disabled = true;
