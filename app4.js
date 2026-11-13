@@ -1,197 +1,257 @@
-/* App de Ordens de Serviço — parte 4 de 5 (não precisa mexer) */
-  // ---------------------------------------------------------- formulário de ordem
-  function formOrdem() {
-    const editando = !!S.ordemId;
-    const o = editando ? (S.ordens.find((x) => x.id === S.ordemId) || {}) : (S.prefill || {});
-    const v = (k) => esc(o[k] || '');
-    moldura(editando ? 'Editar OS #' + o.numero : 'Nova ordem de serviço', `
-      <div class="card">
-        <h3>Cliente</h3>
-        <label>Nome do cliente *</label><input id="f-cliente_nome" value="${v('cliente_nome')}" autocomplete="off">
-        <label>Telefone / WhatsApp</label><input id="f-cliente_telefone" type="tel" inputmode="tel" placeholder="(85) 99999-9999" value="${v('cliente_telefone')}">
-      </div>
-      <div class="card">
-        <h3>Aparelho</h3>
-        <label>Tipo de aparelho *</label>
-        <input id="f-aparelho" list="lista-aparelhos" value="${v('aparelho')}" placeholder="Ex.: TV, Celular, Micro-ondas">
-        <datalist id="lista-aparelhos">${APARELHOS.map((a) => `<option value="${a}">`).join('')}</datalist>
-        <div class="linha2">
-          <div><label>Marca</label><input id="f-marca" value="${v('marca')}"></div>
-          <div><label>Modelo</label><input id="f-modelo" value="${v('modelo')}"></div>
-        </div>
-        <label>Nº de série</label><input id="f-numero_serie" value="${v('numero_serie')}">
-        <label>Acessórios deixados</label><input id="f-acessorios" value="${v('acessorios')}" placeholder="Ex.: controle remoto, cabo, carregador">
-        <label>Defeito relatado pelo cliente</label><textarea id="f-defeito">${v('defeito')}</textarea>
-        <label>Previsão de entrega</label><input id="f-previsao" type="date" value="${v('previsao')}">
-        <label>Observações</label><textarea id="f-observacoes" placeholder="Arranhões, estado do aparelho, etc.">${v('observacoes')}</textarea>
-      </div>
-      ${editando ? '' : `
-      <div class="card">
-        <h3>Fotos do aparelho</h3>
-        <label class="btn sec full" style="margin:0">📷 Tirar / escolher fotos<input type="file" accept="image/*" multiple id="f-fotos" style="display:none"></label>
-        <div id="f-fotos-qtd" class="muted small" style="margin-top:6px">${S.novasFotos.length ? S.novasFotos.length + ' foto(s) selecionada(s)' : ''}</div>
-      </div>`}
-      <div class="btns" style="margin-bottom:24px">
-        <button class="btn full" id="f-salvar">${editando ? 'Salvar alterações' : 'Cadastrar aparelho'}</button>
-      </div>
-      <div id="f-erro"></div>
-    `, { voltar: () => editando ? ir('ordem') : ir('ordens'), semNav: true });
+/* App TecnoSat — parte 4 de 8: cadastro, entrega e comprovante (não precisa mexer) */
 
-    const fi = document.getElementById('f-fotos');
-    if (fi) fi.onchange = (e) => {
-      S.novasFotos = S.novasFotos.concat(Array.from(e.target.files || []));
-      document.getElementById('f-fotos-qtd').textContent = S.novasFotos.length + ' foto(s) selecionada(s)';
-    };
-    const btn = document.getElementById('f-salvar');
-    btn.onclick = async () => {
-      const campos = {};
-      ['cliente_nome', 'cliente_telefone', 'aparelho', 'marca', 'modelo', 'numero_serie', 'acessorios', 'defeito', 'previsao', 'observacoes']
-        .forEach((k) => { campos[k] = val('f-' + k) || null; });
-      if (!campos.cliente_nome || !campos.aparelho) return alert('Preencha o nome do cliente e o tipo de aparelho.');
-      btn.disabled = true; btn.textContent = 'Salvando…';
-      let res;
-      if (editando) res = await sb.from('ordens').update(campos).eq('id', S.ordemId).select().single();
-      else res = await sb.from('ordens').insert(campos).select().single();
-      if (res.error) {
-        btn.disabled = false; btn.textContent = 'Tentar de novo';
-        document.getElementById('f-erro').innerHTML = '<div class="erro">' + esc(erroTexto(res.error)) + '</div>';
-        return;
+function formOrdem() {
+  const editando = !!S.ordemId;
+  const o = editando ? (S.ordens.find((x) => x.id === S.ordemId) || {}) : (S.prefill || {});
+  const v = (k) => esc(o[k] || '');
+  const marcados = new Set(o.checklist || []);
+  let cliSel = o.cliente_id || null;
+  moldura(editando ? 'Editar OS #' + o.numero : 'Nova ordem de serviço', `
+    <div class="card">
+      <h3>Cliente</h3>
+      <label>Nome do cliente *</label>
+      <input id="f-cliente_nome" value="${v('cliente_nome')}" autocomplete="off" placeholder="Digite o nome ou o telefone">
+      <div id="sugestoes" class="sugestoes"></div>
+      <label>Telefone / WhatsApp</label><input id="f-cliente_telefone" type="tel" inputmode="tel" placeholder="(85) 99999-9999" value="${v('cliente_telefone')}">
+      <div id="cliInfo"></div>
+    </div>
+    <div class="card">
+      <h3>Aparelho</h3>
+      <label>Tipo de aparelho *</label>
+      <input id="f-aparelho" list="lista-aparelhos" value="${v('aparelho')}" placeholder="Ex.: TV, Celular, Micro-ondas">
+      <datalist id="lista-aparelhos">${APARELHOS.map((a) => `<option value="${a}">`).join('')}</datalist>
+      <div class="linha2">
+        <div><label>Marca</label><input id="f-marca" value="${v('marca')}"></div>
+        <div><label>Modelo</label><input id="f-modelo" value="${v('modelo')}"></div>
+      </div>
+      <label>Nº de série / IMEI</label><input id="f-numero_serie" value="${v('numero_serie')}">
+      <label>Acessórios deixados</label><input id="f-acessorios" value="${v('acessorios')}" placeholder="Ex.: controle remoto, cabo, carregador">
+      <label>Defeito relatado pelo cliente</label><textarea id="f-defeito">${v('defeito')}</textarea>
+      <label>Estado do aparelho na entrada (toque para marcar)</label>
+      <div class="chips quebra" id="check">
+        ${CHECKLIST.map((c) => `<button type="button" class="chip ${marcados.has(c) ? 'ativo' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}
+      </div>
+      <label>Senha / padrão de desbloqueio</label><input id="f-senha_aparelho" value="${v('senha_aparelho')}" autocomplete="off" placeholder="Se o cliente informar">
+      <label>Previsão de entrega</label><input id="f-previsao" type="date" value="${v('previsao')}">
+      <label>Observações</label><textarea id="f-observacoes" placeholder="Arranhões, estado do aparelho, etc.">${v('observacoes')}</textarea>
+      <label>Técnico responsável</label>
+      <select id="f-tecnico">
+        <option value="">Ninguém por enquanto</option>
+        ${ativos().map((p) => `<option value="${p.id}" ${o.tecnico === p.id ? 'selected' : ''}>${esc(p.nome)}${p.id === S.user.id ? ' (eu)' : ''}</option>`).join('')}
+      </select>
+    </div>
+    ${editando ? '' : `
+    <div class="card">
+      <h3>Fotos do aparelho</h3>
+      <label class="btn sec full" style="margin:0">📷 Tirar / escolher fotos<input type="file" accept="image/*" multiple id="f-fotos" style="display:none"></label>
+      <div id="f-fotos-qtd" class="muted small" style="margin-top:6px">${S.novasFotos.length ? S.novasFotos.length + ' foto(s) selecionada(s)' : ''}</div>
+    </div>`}
+    <div class="btns" style="margin-bottom:24px"><button class="btn full" id="f-salvar">${editando ? 'Salvar alterações' : 'Cadastrar aparelho'}</button></div>
+    <div id="f-erro"></div>
+  `, { voltar: () => editando ? ir('ordem') : ir(S.voltarPara || 'ordens', { voltarPara: null }), semNav: true });
+
+  const $ = (id) => document.getElementById(id);
+  document.querySelectorAll('#check [data-c]').forEach((b) => b.onclick = () => {
+    const c = b.dataset.c; if (marcados.has(c)) marcados.delete(c); else marcados.add(c);
+    b.classList.toggle('ativo', marcados.has(c));
+  });
+
+  function mostrarCliente() {
+    const box = $('cliInfo'); const cli = S.clientes.find((c) => c.id === cliSel);
+    if (!cli) { box.innerHTML = $('f-cliente_nome').value.trim() ? '<p class="muted small">Cliente novo — será cadastrado automaticamente.</p>' : ''; return; }
+    const antigas = ordensDoCliente(cli).filter((x) => x.id !== S.ordemId);
+    const gar = garantiaAtiva(cli.id, cli.telefone, S.ordemId);
+    box.innerHTML = `<div class="alerta verde small">✔ Cliente cadastrado · ${antigas.length} OS anterior(es)</div>` +
+      gar.map((g) => `<div class="alerta small">🔁 <b>Atenção:</b> a OS #${g.numero} (${esc(g.aparelho)}) tem garantia até ${fmtDia(g.garantia_ate)}. Pode ser retorno em garantia.</div>`).join('');
+  }
+  function sugerir() {
+    const box = $('sugestoes'); const q = $('f-cliente_nome').value.trim().toLowerCase(); const qd = digitos(q);
+    if (cliSel || q.length < 2) { box.innerHTML = ''; return; }
+    const achados = S.clientes.filter((c) => c.nome.toLowerCase().includes(q) || (qd.length >= 4 && (c.telefone_digitos || '').includes(qd))).slice(0, 6);
+    box.innerHTML = achados.map((c) => `<div class="sug" data-cli="${c.id}"><b>${esc(c.nome)}</b> <span class="muted small">${esc(c.telefone || '')}</span></div>`).join('');
+    box.querySelectorAll('[data-cli]').forEach((d) => d.onclick = () => {
+      const c = S.clientes.find((x) => x.id === d.dataset.cli); cliSel = c.id;
+      $('f-cliente_nome').value = c.nome; $('f-cliente_telefone').value = c.telefone || '';
+      box.innerHTML = ''; mostrarCliente();
+    });
+  }
+  $('f-cliente_nome').oninput = () => { if (!editando) cliSel = null; sugerir(); mostrarCliente(); };
+  $('f-cliente_telefone').oninput = () => {
+    const d = digitos($('f-cliente_telefone').value);
+    if (!editando && d.length >= 10) {
+      const c = S.clientes.find((x) => x.telefone_digitos === d);
+      if (c) { cliSel = c.id; if (!$('f-cliente_nome').value.trim()) $('f-cliente_nome').value = c.nome; mostrarCliente(); }
+    }
+  };
+  mostrarCliente();
+
+  const fi = $('f-fotos');
+  if (fi) fi.onchange = (e) => {
+    S.novasFotos = S.novasFotos.concat(Array.from(e.target.files || []));
+    $('f-fotos-qtd').textContent = S.novasFotos.length + ' foto(s) selecionada(s)';
+  };
+  const btn = $('f-salvar');
+  btn.onclick = async () => {
+    const campos = {};
+    ['cliente_nome', 'cliente_telefone', 'aparelho', 'marca', 'modelo', 'numero_serie', 'acessorios', 'defeito', 'previsao', 'observacoes', 'senha_aparelho']
+      .forEach((k) => { campos[k] = val('f-' + k) || null; });
+    campos.tecnico = val('f-tecnico') || null;
+    campos.checklist = Array.from(marcados);
+    if (!campos.cliente_nome || !campos.aparelho) return alert('Preencha o nome do cliente e o tipo de aparelho.');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    const falhou = (e) => { btn.disabled = false; btn.textContent = 'Tentar de novo'; $('f-erro').innerHTML = '<div class="erro">' + esc(erroTexto(e)) + '</div>'; };
+    // Liga ao cadastro de clientes (procura pelo telefone; se não achar, cria)
+    if (!cliSel) {
+      const d = digitos(campos.cliente_telefone);
+      const achado = d.length >= 8 ? S.clientes.find((c) => c.telefone_digitos === d) : null;
+      if (achado) cliSel = achado.id;
+      else {
+        const { data, error } = await sb.from('clientes').insert({ nome: campos.cliente_nome, telefone: campos.cliente_telefone }).select().single();
+        if (error) return falhou(error);
+        S.clientes.push(data); cliSel = data.id;
       }
-      const o2 = res.data;
-      const i = S.ordens.findIndex((x) => x.id === o2.id);
-      if (i >= 0) S.ordens[i] = o2; else S.ordens.unshift(o2);
-      if (!editando && S.prefill && S.prefill._agId) {
-        await sb.from('agendamentos').update({ status: 'feito' }).eq('id', S.prefill._agId);
-      }
-      const fotos = S.novasFotos; S.novasFotos = []; S.prefill = null;
-      S.ordemId = o2.id; S.tela = 'ordem';
-      if (fotos.length) { btn.textContent = 'Enviando fotos…'; await enviarFotos(o2.id, fotos, null); }
-      toast(editando ? '✔ Alterações salvas' : '✔ OS #' + o2.numero + ' cadastrada');
-      abrirOrdem(o2.id);
-    };
-  }
+    }
+    campos.cliente_id = cliSel;
+    const res = editando ? await sb.from('ordens').update(campos).eq('id', S.ordemId).select().single()
+      : await sb.from('ordens').insert(campos).select().single();
+    if (res.error) return falhou(res.error);
+    const o2 = res.data;
+    const i = S.ordens.findIndex((x) => x.id === o2.id);
+    if (i >= 0) S.ordens[i] = o2; else S.ordens.unshift(o2);
+    if (!editando && S.prefill && S.prefill._agId) await sb.from('agendamentos').update({ status: 'feito' }).eq('id', S.prefill._agId);
+    const fotos = S.novasFotos; S.novasFotos = []; S.prefill = null;
+    S.ordemId = o2.id; S.tela = 'ordem';
+    if (fotos.length) { btn.textContent = 'Enviando fotos…'; await enviarFotos(o2.id, fotos, null); }
+    toast(editando ? '✔ Alterações salvas' : '✔ OS #' + o2.numero + ' cadastrada');
+    if (!editando && confirm('OS #' + o2.numero + ' cadastrada!\n\nQuer abrir o comprovante de entrada para imprimir ou enviar ao cliente?')) {
+      return ir('comprovante', { compTipo: 'entrada' });
+    }
+    abrirOrdem(o2.id);
+  };
+}
 
-  // ---------------------------------------------------------- agenda
-  function telaAgenda() {
-    const agora = new Date(); const hojeIni = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-    const filtros = {
-      proximos: (a) => a.status === 'agendado',
-      feitos: (a) => a.status !== 'agendado',
-      todos: () => true
-    };
-    let itens = S.agenda.filter(filtros[S.agFiltro]);
-    if (S.agFiltro === 'feitos') itens = itens.slice().reverse();
-    const grupos = {};
-    itens.forEach((a) => { const k = diaChave(a.data_hora); (grupos[k] = grupos[k] || []).push(a); });
-    const html = Object.keys(grupos).map((k) => `
-      <div class="dia">${rotuloDia(k)}</div>
-      ${grupos[k].map((a) => {
-        const atrasado = a.status === 'agendado' && new Date(a.data_hora) < hojeIni;
-        return `
-        <div class="card">
-          <div class="os-linha">
-            <span class="os-num">${fmtHora(a.data_hora)}</span>
-            <span class="badge ${a.status === 'feito' ? 'st-pronto' : a.status === 'cancelado' ? 'st-sem_conserto' : atrasado ? 'st-aguardando_peca' : 'st-em_analise'}">
-              ${a.status === 'feito' ? 'Feito' : a.status === 'cancelado' ? 'Cancelado' : atrasado ? 'Atrasado' : 'Agendado'}</span>
-          </div>
-          <div class="os-titulo">${esc(a.cliente_nome)}${a.aparelho ? ' — ' + esc(a.aparelho) : ''}</div>
-          ${a.endereco ? `<div class="small">📍 ${esc(a.endereco)}</div>` : ''}
-          ${a.descricao ? `<div class="small muted" style="margin-top:4px">${esc(a.descricao)}</div>` : ''}
-          <div class="small muted" style="margin-top:4px">👤 Responsável: ${esc(a.responsavel ? nomeDe(a.responsavel) : 'qualquer um')}</div>
-          <div class="btns">
-            ${a.status === 'agendado' ? `<button class="btn ok" data-feito="${a.id}">✓ Feito</button>` : ''}
-            ${a.cliente_telefone ? `<button class="btn zap" data-zap="${a.id}">💬</button>` : ''}
-            ${a.endereco ? `<a class="btn sec" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.endereco)}">🗺️</a>` : ''}
-            <button class="btn sec" data-os="${a.id}">+ OS</button>
-            <button class="btn sec" data-ed="${a.id}">✏️</button>
-          </div>
-        </div>`;
-      }).join('')}`).join('');
-    moldura('Agenda', `
-      <div class="chips">
-        <button class="chip ${S.agFiltro === 'proximos' ? 'ativo' : ''}" data-af="proximos">A fazer</button>
-        <button class="chip ${S.agFiltro === 'feitos' ? 'ativo' : ''}" data-af="feitos">Feitos / cancelados</button>
-        <button class="chip ${S.agFiltro === 'todos' ? 'ativo' : ''}" data-af="todos">Todos</button>
-      </div>
-      ${html || '<div class="vazio">Nenhum agendamento.<br>Toque no <b>+</b> para marcar uma visita ou avaliação.</div>'}
-    `, { fab: () => ir('formAgenda', { agId: null }) });
-    $app.querySelectorAll('[data-af]').forEach((b) => b.onclick = () => { S.agFiltro = b.dataset.af; render(); });
-    const acha = (id) => S.agenda.find((x) => x.id === id);
-    $app.querySelectorAll('[data-feito]').forEach((b) => b.onclick = async () => {
-      const { error } = await sb.from('agendamentos').update({ status: 'feito' }).eq('id', b.dataset.feito);
-      if (error) return erro(error, 'agenda');
-      acha(b.dataset.feito).status = 'feito'; toast('✔ Marcado como feito'); render();
-    });
-    $app.querySelectorAll('[data-zap]').forEach((b) => b.onclick = () => {
-      const a = acha(b.dataset.zap);
-      abrirZap(a.cliente_telefone, `Olá ${a.cliente_nome.split(' ')[0]}! Aqui é da ${C.NOME_EMPRESA || 'assistência técnica'}. Confirmando nossa visita no dia ${fmtData(a.data_hora)} às ${fmtHora(a.data_hora)}${a.aparelho ? ' para olhar seu aparelho (' + a.aparelho + ')' : ''}. Tudo certo?`);
-    });
-    $app.querySelectorAll('[data-ed]').forEach((b) => b.onclick = () => ir('formAgenda', { agId: b.dataset.ed }));
-    $app.querySelectorAll('[data-os]').forEach((b) => b.onclick = () => {
-      const a = acha(b.dataset.os);
-      ir('formOrdem', { ordemId: null, novasFotos: [], prefill: { cliente_nome: a.cliente_nome, cliente_telefone: a.cliente_telefone, aparelho: a.aparelho, defeito: a.descricao, _agId: a.status === 'agendado' ? a.id : null } });
-    });
-  }
+// ---------------------------------------------------------- entrega ao cliente
+function telaEntrega() {
+  const o = S.ordens.find((x) => x.id === S.ordemId);
+  if (!o) return ir('ordens');
+  const orc = S.orc[o.id] || {};
+  const jaEntregue = o.status === 'entregue' || (o.status === 'sem_conserto' && o.entregue_em);
+  const semConserto = o.status === 'sem_conserto';
+  let pag = o.forma_pagamento || '';
+  let gar = o.garantia_dias != null ? o.garantia_dias : (semConserto ? 0 : Number(S.loja.garantia_padrao || 90));
+  const vPadrao = orc.valor_final != null ? orc.valor_final : orc.valor;
+  moldura('Entrega — OS #' + o.numero, `
+    <div class="card">
+      <div class="os-titulo">${esc([o.aparelho, o.marca, o.modelo].filter(Boolean).join(' · '))}</div>
+      <div>${esc(o.cliente_nome)}</div>
+      ${o.orcamento_status === 'recusado' ? '<div class="alerta small">O cliente recusou o orçamento.</div>' : ''}
+      <label>Quem retirou o aparelho</label><input id="e-ret" value="${esc(o.retirado_por || o.cliente_nome)}">
+      <label>Forma de pagamento</label>
+      <div class="chips quebra" id="e-pag">${PAGAMENTOS.map((p) => `<button class="chip ${pag === p ? 'ativo' : ''}" data-p="${p}">${p}</button>`).join('')}</div>
+      ${semConserto ? '' : `
+      <label>Garantia do serviço</label>
+      <div class="chips quebra" id="e-gar">${[0, 30, 90, 180].map((d) => `<button class="chip ${gar === d ? 'ativo' : ''}" data-g="${d}">${d ? d + ' dias' : 'Sem garantia'}</button>`).join('')}</div>
+      <input id="e-gdias" type="number" inputmode="numeric" min="0" placeholder="Outro nº de dias" value="${[0, 30, 90, 180].includes(gar) ? '' : gar}">`}
+      ${souDono() ? `<label>Valor cobrado (R$)</label><input id="e-valor" inputmode="decimal" placeholder="0,00" value="${vPadrao != null ? Number(vPadrao).toFixed(2).replace('.', ',') : ''}">
+        <p class="muted small">🔒 Só você vê. Entra no relatório de faturamento.</p>` : '<p class="muted small">O valor cobrado é registrado pelo dono.</p>'}
+    </div>
+    <div class="btns" style="margin-bottom:24px"><button class="btn ok full" id="e-salvar">${jaEntregue ? 'Salvar correção' : '✔ Confirmar entrega'}</button></div>
+    <div id="e-erro"></div>
+  `, { voltar: () => ir('ordem'), semNav: true });
 
-  function formAgenda() {
-    const a = S.agId ? (S.agenda.find((x) => x.id === S.agId) || {}) : {};
-    const v = (k) => esc(a[k] || '');
-    const dt = a.data_hora ? new Date(a.data_hora) : null;
-    const amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
-    const dataPadrao = dt ? diaChave(dt) : diaChave(amanha);
-    const horaPadrao = dt ? fmtHora(dt) : '09:00';
-    const ativos = Object.values(S.perfis).filter((p) => ['dono', 'funcionario'].includes(p.papel));
-    moldura(S.agId ? 'Editar agendamento' : 'Novo agendamento', `
-      <div class="card">
-        <label>Nome do cliente *</label><input id="a-cliente_nome" value="${v('cliente_nome')}">
-        <label>Telefone / WhatsApp</label><input id="a-cliente_telefone" type="tel" inputmode="tel" value="${v('cliente_telefone')}">
-        <label>Endereço</label><input id="a-endereco" value="${v('endereco')}" placeholder="Rua, número, bairro">
-        <label>Aparelho</label><input id="a-aparelho" list="lista-ap2" value="${v('aparelho')}">
-        <datalist id="lista-ap2">${APARELHOS.map((x) => `<option value="${x}">`).join('')}</datalist>
-        <label>O que precisa ser feito</label><textarea id="a-descricao">${v('descricao')}</textarea>
-        <div class="linha2">
-          <div><label>Dia *</label><input id="a-dia" type="date" value="${dataPadrao}"></div>
-          <div><label>Hora *</label><input id="a-hora" type="time" value="${horaPadrao}"></div>
+  const $ = (id) => document.getElementById(id);
+  document.querySelectorAll('#e-pag [data-p]').forEach((b) => b.onclick = () => {
+    pag = pag === b.dataset.p ? '' : b.dataset.p;
+    document.querySelectorAll('#e-pag [data-p]').forEach((x) => x.classList.toggle('ativo', x.dataset.p === pag));
+  });
+  document.querySelectorAll('#e-gar [data-g]').forEach((b) => b.onclick = () => {
+    gar = Number(b.dataset.g); $('e-gdias').value = '';
+    document.querySelectorAll('#e-gar [data-g]').forEach((x) => x.classList.toggle('ativo', Number(x.dataset.g) === gar));
+  });
+  $('e-salvar').onclick = async () => {
+    const outro = $('e-gdias') ? $('e-gdias').value.trim() : '';
+    const dias = semConserto ? 0 : (outro !== '' ? Number(outro) : gar);
+    const campos = { retirado_por: val('e-ret') || null, forma_pagamento: pag || null, garantia_dias: dias || null };
+    if (!jaEntregue) {
+      if (semConserto) campos.entregue_em = new Date().toISOString(); else campos.status = 'entregue';
+    }
+    const btn = $('e-salvar'); btn.disabled = true;
+    if (souDono() && $('e-valor')) {
+      const bruto = val('e-valor').replace(/\./g, '').replace(',', '.');
+      const valor = bruto === '' ? null : Number(bruto);
+      if (bruto !== '' && isNaN(valor)) { btn.disabled = false; return alert('Valor inválido. Exemplo: 150,00'); }
+      const r = await sb.from('orcamentos').upsert({ ordem_id: o.id, valor_final: valor, updated_at: new Date().toISOString() }).select().single();
+      if (r.error) { btn.disabled = false; $('e-erro').innerHTML = '<div class="erro">' + esc(erroTexto(r.error)) + '</div>'; return; }
+      S.orc[o.id] = r.data;
+    }
+    const { data, error } = await sb.from('ordens').update(campos).eq('id', o.id).select().single();
+    btn.disabled = false;
+    if (error) { $('e-erro').innerHTML = '<div class="erro">' + esc(erroTexto(error)) + '</div>'; return; }
+    const i = S.ordens.findIndex((x) => x.id === o.id); if (i >= 0) S.ordens[i] = data;
+    await carregarHist(o.id);
+    toast('✔ Entrega registrada');
+    if (!jaEntregue && confirm('Entrega registrada!\n\nQuer abrir o comprovante de entrega?')) return ir('comprovante', { compTipo: 'entrega' });
+    ir('ordem');
+  };
+}
+
+// ---------------------------------------------------------- comprovante (imprimir / PDF)
+function telaComprovante() {
+  const o = S.ordens.find((x) => x.id === S.ordemId);
+  if (!o) return ir('ordens');
+  const entrega = S.compTipo === 'entrega';
+  const L = S.loja || {};
+  const orc = S.orc[o.id] || {};
+  const link = linkCliente(o);
+  let qr = '';
+  try { const q = qrcode(0, 'M'); q.addData(link); q.make(); qr = q.createSvgTag({ cellSize: 3, margin: 0 }); } catch (_) { qr = ''; }
+  const linha = (r, v) => v ? `<tr><th>${r}</th><td>${esc(v)}</td></tr>` : '';
+  const termos = String(L.termos || '').split('\n').filter((t) => t.trim());
+  $app.innerHTML = `
+    <div class="nao-imprimir barra-comp">
+      <button class="btn sec" id="c-voltar">‹ Voltar</button>
+      <button class="btn" id="c-print">🖨️ Imprimir / Salvar PDF</button>
+      <button class="btn zap" id="c-zap">💬 Enviar link</button>
+    </div>
+    <div class="comprovante">
+      <div class="c-topo">
+        <div>
+          <div class="c-loja">${esc(L.nome || empresa())}</div>
+          ${L.endereco ? `<div>${esc(L.endereco)}</div>` : ''}
+          ${L.telefone || L.whatsapp ? `<div>${esc([L.telefone, L.whatsapp && L.whatsapp !== L.telefone ? 'WhatsApp ' + L.whatsapp : ''].filter(Boolean).join(' · '))}</div>` : ''}
         </div>
-        <label>Responsável</label>
-        <select id="a-responsavel">
-          <option value="">Qualquer um</option>
-          ${ativos.map((p) => `<option value="${p.id}" ${a.responsavel === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
-        </select>
-        ${S.agId ? `<label>Situação</label><select id="a-status">
-          ${[['agendado', 'Agendado'], ['feito', 'Feito'], ['cancelado', 'Cancelado']].map(([k, r]) => `<option value="${k}" ${a.status === k ? 'selected' : ''}>${r}</option>`).join('')}
-        </select>` : ''}
+        <div class="c-num">OS<br><b>#${o.numero}</b></div>
       </div>
-      <div class="btns"><button class="btn full" id="a-salvar">Salvar</button></div>
-      ${S.agId && souDono() ? '<div class="btns" style="margin-bottom:24px"><button class="btn perigo full" id="a-apagar">🗑️ Apagar agendamento</button></div>' : ''}
-      <div id="a-erro"></div>
-    `, { voltar: () => ir('agenda'), semNav: true });
-
-    document.getElementById('a-salvar').onclick = async (ev) => {
-      const btn = ev.target;
-      const dia = val('a-dia'), hora = val('a-hora');
-      const campos = {
-        cliente_nome: val('a-cliente_nome'), cliente_telefone: val('a-cliente_telefone') || null, endereco: val('a-endereco') || null,
-        aparelho: val('a-aparelho') || null, descricao: val('a-descricao') || null, responsavel: val('a-responsavel') || null
-      };
-      if (!campos.cliente_nome || !dia || !hora) return alert('Preencha o nome do cliente, o dia e a hora.');
-      campos.data_hora = new Date(dia + 'T' + hora + ':00').toISOString();
-      if (S.agId) campos.status = val('a-status');
-      btn.disabled = true;
-      const res = S.agId ? await sb.from('agendamentos').update(campos).eq('id', S.agId).select().single()
-        : await sb.from('agendamentos').insert(campos).select().single();
-      btn.disabled = false;
-      if (res.error) { document.getElementById('a-erro').innerHTML = '<div class="erro">' + esc(erroTexto(res.error)) + '</div>'; return; }
-      const i = S.agenda.findIndex((x) => x.id === res.data.id);
-      if (i >= 0) S.agenda[i] = res.data; else S.agenda.push(res.data);
-      S.agenda.sort((x, y) => new Date(x.data_hora) - new Date(y.data_hora));
-      toast('✔ Agendamento salvo'); ir('agenda');
-    };
-    const ap = document.getElementById('a-apagar');
-    if (ap) ap.onclick = async () => {
-      if (!confirm('Apagar este agendamento?')) return;
-      const { error } = await sb.from('agendamentos').delete().eq('id', S.agId);
-      if (error) return erro(error, 'apagar');
-      S.agenda = S.agenda.filter((x) => x.id !== S.agId); toast('Agendamento apagado'); ir('agenda');
-    };
-  }
+      <h2>${entrega ? 'Comprovante de entrega' : 'Comprovante de entrada de aparelho'}</h2>
+      <table>
+        ${linha('Data de entrada', fmtDataHora(o.created_at))}
+        ${linha('Cliente', o.cliente_nome)}
+        ${linha('Telefone', o.cliente_telefone)}
+        ${linha('Aparelho', [o.aparelho, o.marca, o.modelo].filter(Boolean).join(' · '))}
+        ${linha('Nº de série / IMEI', o.numero_serie)}
+        ${linha('Acessórios', o.acessorios || 'Nenhum')}
+        ${linha('Estado na entrada', (o.checklist || []).join(', '))}
+        ${linha('Defeito relatado', o.defeito)}
+        ${linha('Observações', o.observacoes)}
+        ${!entrega ? linha('Previsão', o.previsao ? fmtDia(o.previsao) : '') : ''}
+        ${entrega ? linha('Serviço / diagnóstico', o.diagnostico) : ''}
+        ${entrega ? linha('Data de entrega', o.entregue_em ? fmtDataHora(o.entregue_em) : fmtDataHora(new Date())) : ''}
+        ${entrega ? linha('Retirado por', o.retirado_por) : ''}
+        ${entrega ? linha('Pagamento', o.forma_pagamento) : ''}
+        ${entrega && souDono() && orc.valor_final != null ? linha('Valor', moeda(orc.valor_final)) : ''}
+        ${entrega ? linha('Garantia', o.garantia_ate ? o.garantia_dias + ' dias — válida até ' + fmtDia(o.garantia_ate) : 'Sem garantia') : ''}
+      </table>
+      ${!entrega && qr ? `<div class="c-qr">${qr}<div>Acompanhe o conserto pelo celular:<br>aponte a câmera para o código<br><span class="small">${esc(link)}</span></div></div>` : ''}
+      ${termos.length ? `<div class="c-termos"><b>Condições</b><ul>${termos.map((t) => '<li>' + esc(t) + '</li>').join('')}</ul></div>` : ''}
+      <div class="c-assin">
+        <div>________________________________<br>${entrega ? 'Assinatura de quem retirou' : 'Assinatura do cliente'}</div>
+        <div>________________________________<br>${esc(L.nome || empresa())}</div>
+      </div>
+    </div>`;
+  document.getElementById('c-voltar').onclick = () => ir('ordem');
+  document.getElementById('c-print').onclick = () => window.print();
+  document.getElementById('c-zap').onclick = () => abrirZap(o.cliente_telefone, entrega
+    ? `Olá ${o.cliente_nome.split(' ')[0]}! Obrigado por escolher a ${empresa()}. Seu aparelho (${o.aparelho}) foi entregue${o.garantia_ate ? ' com garantia até ' + fmtDia(o.garantia_ate) : ''}. OS #${o.numero}.\n\nDetalhes: ${link}`
+    : `Olá ${o.cliente_nome.split(' ')[0]}! Recebemos seu aparelho (${o.aparelho}) na ${empresa()}. Ordem de serviço #${o.numero}.\n\nAcompanhe o conserto por aqui: ${link}`);
+  window.scrollTo(0, 0);
+}

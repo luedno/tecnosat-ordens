@@ -102,3 +102,57 @@ nav.baixo button.ativo { color: var(--azul); font-weight: 700; }
 .login .logo { font-size: 48px; text-align: center; }
 .login h1 { text-align: center; font-size: 22px; margin: 8px 0 24px; }
 a.link { color: var(--azul); }
+
+/* ---------- v2 ---------- */
+.erro.ok { background: #dcfce7; color: #166534; }
+.seg { display: flex; background: #e5e7eb; border-radius: 10px; padding: 3px; margin: 10px 0; }
+.seg button { flex: 1; border: 0; background: none; padding: 8px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.seg button.ativo { background: #fff; color: var(--azul); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+.alerta { background: #fef3c7; color: #92400e; padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; cursor: pointer; }
+.alerta.verde { background: #dcfce7; color: #166534; cursor: default; }
+.alerta.cinza { background: #e5e7eb; color: #374151; cursor: default; }
+.card.parado { border-left: 4px solid #f59e0b; }
+.chips.quebra { flex-wrap: wrap; overflow: visible; }
+.chip.fixo { background: #f3f4f6; }
+.bolinha { display: inline-block; background: #dc2626; color: #fff; border-radius: 999px; font-size: 11px; padding: 1px 6px; font-weight: 700; }
+.senha { font-family: monospace; font-size: 16px; }
+.sugestoes { background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,.12); margin-top: 4px; overflow: hidden; }
+.sug { padding: 10px 12px; border-bottom: 1px solid var(--borda); cursor: pointer; }
+.sug:last-child { border-bottom: 0; }
+.menu-item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: #fff; border: 0; border-radius: 12px;
+  padding: 14px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06); font-size: 15px; color: var(--texto); cursor: pointer; }
+.menu-item .ic { font-size: 24px; }
+.menu-item span:nth-child(2) { flex: 1; }
+.menu-item .seta { color: var(--muted); font-size: 22px; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.kpi { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.kpi b { display: block; font-size: 26px; color: var(--azul); }
+.kpi span { font-size: 13px; color: var(--muted); }
+.barra-l { display: flex; justify-content: space-between; font-size: 14px; margin-top: 8px; }
+.barra { background: #e5e7eb; border-radius: 6px; height: 8px; margin-top: 4px; overflow: hidden; }
+.barra div { background: var(--azul); height: 100%; border-radius: 6px; }
+
+/* comprovante */
+.barra-comp { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; padding: 10px; background: var(--fundo); flex-wrap: wrap; }
+.barra-comp .btn { flex: 1 1 auto; font-size: 14px; padding: 10px; }
+.comprovante { background: #fff; color: #000; max-width: 720px; margin: 0 auto 30px; padding: 22px; font-size: 13px; }
+.c-topo { display: flex; justify-content: space-between; gap: 12px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+.c-loja { font-size: 20px; font-weight: 800; }
+.c-num { text-align: center; border: 2px solid #000; border-radius: 8px; padding: 4px 12px; font-size: 13px; }
+.c-num b { font-size: 22px; }
+.comprovante h2 { font-size: 16px; text-align: center; margin: 12px 0; text-transform: uppercase; }
+.comprovante table { width: 100%; border-collapse: collapse; }
+.comprovante th, .comprovante td { border: 1px solid #999; padding: 5px 7px; text-align: left; vertical-align: top; }
+.comprovante th { width: 34%; background: #f3f4f6; font-weight: 600; }
+.c-qr { display: flex; gap: 14px; align-items: center; margin-top: 12px; border: 1px dashed #999; padding: 10px; border-radius: 8px; }
+.c-qr span { word-break: break-all; color: #555; }
+.c-termos { margin-top: 12px; font-size: 11.5px; }
+.c-termos ul { margin: 4px 0 0; padding-left: 18px; }
+.c-assin { display: flex; justify-content: space-between; gap: 20px; margin-top: 40px; text-align: center; font-size: 12px; }
+@media print {
+  body, html { background: #fff; }
+  .nao-imprimir, #toast { display: none !important; }
+  #app { padding: 0; max-width: none; }
+  .comprovante { margin: 0; padding: 0; max-width: none; }
+  @page { margin: 12mm; }
+}

@@ -1,26 +1,16 @@
-APP TECNOSAT — ORDENS DE SERVIÇO
-================================
-O banco de dados JÁ ESTÁ PRONTO (Supabase, projeto "tecnosat-ordens").
-O arquivo config.js JÁ ESTÁ PREENCHIDO. Você só precisa colocar no ar.
+APP TECNOSAT — VERSÃO 2
+=======================
+O banco de dados JÁ FOI ATUALIZADO. Só falta atualizar os arquivos no GitHub.
 
-1) GITHUB
-   - Crie um repositório novo (ex.: tecnosat-ordens).
-   - "Add file" > "Upload files" > arraste TODOS os arquivos deste zip > "Commit changes".
+1) Extraia este zip no celular (app Arquivos > toque no zip > Extrair).
+2) No GitHub, abra o repositório tecnosat-ordens > Add file > Upload files.
+3) Selecione TODOS os arquivos da pasta extraída > Commit changes.
+   (Os arquivos com o mesmo nome são substituídos automaticamente.)
+4) Espere 1 minuto e abra o app. Se ainda aparecer a versão antiga,
+   feche o app e abra de novo.
 
-2) VERCEL
-   - "Add New" > "Project" > escolha o repositório tecnosat-ordens > "Deploy".
-   - Não mude nenhuma configuração.
-
-3) SUPABASE (1 ajuste, 30 segundos)
-   - Entre em supabase.com > projeto "tecnosat-ordens".
-   - Menu da esquerda: Authentication > Sign In / Providers > Email.
-   - DESLIGUE "Confirm email" e clique em Save.
-
-4) USAR
-   - Abra o link da Vercel no SEU celular e toque em "Criar conta".
-     >>> A PRIMEIRA conta criada vira o DONO. Crie a sua antes dos funcionários! <<<
-   - Instale: Chrome > menu (3 pontinhos) > "Adicionar à tela inicial".
-   - Aba "Equipe" > "Enviar convite no WhatsApp" para os funcionários.
-   - Quando eles criarem a conta, toque em "Liberar acesso".
-
-SE DER ERRO: o app mostra a mensagem real do servidor. Tire um print e me mande.
+DEPOIS DE ATUALIZAR
+- Menu > Dados da loja: preencha endereço, telefone e WhatsApp da TecnoSat
+  (aparecem no comprovante e no link do cliente).
+- Menu > Ativar notificações: faça em CADA celular (o seu e o dos funcionários).
+  No iPhone, o app precisa estar instalado na Tela de Início antes.
