@@ -160,7 +160,9 @@ function telaEntrega() {
       <div class="chips quebra" id="e-gar">${[0, 30, 90, 180].map((d) => `<button class="chip ${gar === d ? 'ativo' : ''}" data-g="${d}">${d ? d + ' dias' : 'Sem garantia'}</button>`).join('')}</div>
       <input id="e-gdias" type="number" inputmode="numeric" min="0" placeholder="Outro nº de dias" value="${[0, 30, 90, 180].includes(gar) ? '' : gar}">`}
       ${souDono() ? `<label>Valor cobrado (R$)</label><input id="e-valor" inputmode="decimal" placeholder="0,00" value="${vPadrao != null ? Number(vPadrao).toFixed(2).replace('.', ',') : ''}">
-        <p class="muted small">🔒 Só você vê. Entra no relatório de faturamento.</p>` : '<p class="muted small">O valor cobrado é registrado pelo dono.</p>'}
+        <p class="muted small">🔒 Só você vê. Entra no relatório de faturamento.</p>
+        ${o.tecnico ? `<label>Comissão de ${esc(nomeDe(o.tecnico))} (R$ fixo — opcional)</label><input id="e-comv" inputmode="decimal" placeholder="Em branco = ${pctDe(o.tecnico)}% do valor cobrado" value="${orc.comissao_valor != null ? Number(orc.comissao_valor).toFixed(2).replace('.', ',') : ''}">` : '<p class="muted small">Sem técnico nesta OS = sem comissão.</p>'}
+        <div id="e-fiadoaviso" class="alerta small" style="display:${pag === 'Fiado' ? 'block' : 'none'}">🧾 Fiado: o aparelho sai agora e o valor fica em “A receber” no Menu. A comissão só conta depois que o cliente pagar.</div>` : '<p class="muted small">O valor cobrado é registrado pelo dono.</p>'}
     </div>
     <div class="btns" style="margin-bottom:24px"><button class="btn ok full" id="e-salvar">${jaEntregue ? 'Salvar correção' : '✔ Confirmar entrega'}</button></div>
     <div id="e-erro"></div>
@@ -170,6 +172,7 @@ function telaEntrega() {
   document.querySelectorAll('#e-pag [data-p]').forEach((b) => b.onclick = () => {
     pag = pag === b.dataset.p ? '' : b.dataset.p;
     document.querySelectorAll('#e-pag [data-p]').forEach((x) => x.classList.toggle('ativo', x.dataset.p === pag));
+    const av = $('e-fiadoaviso'); if (av) av.style.display = pag === 'Fiado' ? 'block' : 'none';
   });
   document.querySelectorAll('#e-gar [data-g]').forEach((b) => b.onclick = () => {
     gar = Number(b.dataset.g); $('e-gdias').value = '';
@@ -187,7 +190,12 @@ function telaEntrega() {
       const bruto = val('e-valor').replace(/\./g, '').replace(',', '.');
       const valor = bruto === '' ? null : Number(bruto);
       if (bruto !== '' && isNaN(valor)) { btn.disabled = false; return alert('Valor inválido. Exemplo: 150,00'); }
-      const r = await sb.from('orcamentos').upsert({ ordem_id: o.id, valor_final: valor, updated_at: new Date().toISOString() }).select().single();
+      if (pag === 'Fiado' && valor == null) { btn.disabled = false; return alert('Para fiado, informe o valor cobrado (é o que o cliente vai ficar devendo).'); }
+      const comv = $('e-comv') ? dec($('e-comv').value) : null;
+      if ($('e-comv') && $('e-comv').value.trim() !== '' && isNaN(comv)) { btn.disabled = false; return alert('Comissão inválida. Exemplo: 20,00'); }
+      const reg = { ordem_id: o.id, valor_final: valor, updated_at: new Date().toISOString() };
+      if (o.tecnico) { reg.comissao_valor = comv; if (orc.comissao_pct == null) reg.comissao_pct = pctDe(o.tecnico); }
+      const r = await sb.from('orcamentos').upsert(reg).select().single();
       if (r.error) { btn.disabled = false; $('e-erro').innerHTML = '<div class="erro">' + esc(erroTexto(r.error)) + '</div>'; return; }
       S.orc[o.id] = r.data;
     }

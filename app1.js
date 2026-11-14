@@ -16,10 +16,10 @@ const APARELHOS = ['TV', 'Celular', 'Notebook', 'Computador', 'Tablet', 'Micro-o
   'Videogame', 'Controle', 'Receptor / Antena', 'Ar-condicionado', 'Geladeira', 'Máquina de lavar', 'Ventilador', 'Liquidificador'];
 const CHECKLIST = ['Liga', 'Não liga', 'Tela trincada', 'Riscos / amassados', 'Sem tampa', 'Sinais de umidade',
   'Sem bateria', 'Botões com defeito', 'Lacre violado', 'Com cartão / chip'];
-const PAGAMENTOS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Sem custo'];
+const PAGAMENTOS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Fiado', 'Sem custo'];
 
 const S = {
-  user: null, perfil: null, perfis: {}, ordens: [], agenda: [], orc: {}, hist: {}, clientes: [], loja: {},
+  user: null, perfil: null, perfis: {}, ordens: [], agenda: [], orc: {}, cfgCom: {}, hist: {}, clientes: [], loja: {},
   tela: 'ordens', filtro: 'abertas', meu: 'todas', busca: '', ordemId: null, agId: null, clienteId: null,
   agFiltro: 'proximos', cliBusca: '', relMes: null,
   online: false, canal: null, iniciado: null, fotoUrls: {}, prefill: null, novasFotos: [], voltarPara: null
@@ -261,7 +261,7 @@ async function carregarTudo() {
     sb.from('clientes').select('*').order('nome').limit(5000),
     sb.from('loja').select('*').eq('id', 1).maybeSingle()
   ];
-  if (souDono()) pedidos.push(sb.from('orcamentos').select('*'));
+  if (souDono()) { pedidos.push(sb.from('orcamentos').select('*')); pedidos.push(sb.from('comissao_config').select('*')); }
   const res = await Promise.all(pedidos);
   const falha = res.find((r) => r.error);
   if (falha) { erro(falha.error, 'carregar dados'); return; }
@@ -271,6 +271,7 @@ async function carregarTudo() {
   S.clientes = res[3].data;
   S.loja = res[4].data || {};
   if (res[5]) S.orc = Object.fromEntries(res[5].data.map((o) => [o.ordem_id, o]));
+  if (res[6]) S.cfgCom = Object.fromEntries(res[6].data.map((c) => [c.user_id, c]));
 }
 
 // ---------------------------------------------------------- sincronização em tempo real
@@ -401,6 +402,9 @@ function render() {
     case 'formCliente': return formCliente();
     case 'menu': return telaMenu();
     case 'equipe': return souDono() ? telaEquipe() : ir('menu');
+    case 'fiados': return souDono() ? telaFiados() : ir('menu');
+    case 'receber': return souDono() ? telaReceber() : ir('menu');
+    case 'comissoes': return souDono() ? telaComissoes() : ir('menu');
     case 'relatorio': return souDono() ? telaRelatorio() : ir('menu');
     case 'loja': return souDono() ? telaLoja() : ir('menu');
     default: S.tela = 'ordens'; return telaOrdens();

@@ -2,12 +2,15 @@
 
 function telaMenu() {
   const pend = Object.values(S.perfis).filter((p) => p.papel === 'pendente').length;
+  const nFiado = S.ordens.filter(fiadoAberto).length;
   const item = (id, ic, titulo, sub) => `<button class="menu-item" id="${id}"><span class="ic">${ic}</span><span><b>${titulo}</b><br><span class="muted small">${sub}</span></span><span class="seta">›</span></button>`;
   moldura('Menu', `
     <div class="card"><b>${esc(S.perfil.nome)}</b><div class="muted small">${souDono() ? 'Dono' : 'Funcionário'} · ${esc(S.perfil.email || '')}</div></div>
     <div class="card" id="pushBox"><h3>Notificações neste celular</h3><div class="muted small">Verificando…</div></div>
     ${souDono() ? `
       ${item('mEquipe', '👥', 'Equipe' + (pend ? ' <span class="bolinha">' + pend + '</span>' : ''), 'Convidar e liberar funcionários')}
+      ${item('mFiado', '🧾', 'A receber (fiado)' + (nFiado ? ' <span class="bolinha">' + nFiado + '</span>' : ''), 'Quem levou o aparelho e ainda não pagou')}
+      ${item('mCom', '💰', 'Comissões', 'Quanto cada funcionário ganhou no mês')}
       ${item('mRel', '📊', 'Relatório do mês', 'Entradas, entregas, faturamento e técnicos')}
       ${item('mLoja', '🏪', 'Dados da loja', 'Endereço, telefone, termos do comprovante, garantia')}
       ${item('mBackup', '💾', 'Baixar cópia de segurança', 'Planilha com todas as ordens e clientes')}
@@ -16,6 +19,8 @@ function telaMenu() {
   `);
   const $ = (id) => document.getElementById(id);
   if ($('mEquipe')) $('mEquipe').onclick = () => ir('equipe');
+  if ($('mFiado')) $('mFiado').onclick = () => ir('fiados');
+  if ($('mCom')) $('mCom').onclick = () => ir('comissoes');
   if ($('mRel')) $('mRel').onclick = () => ir('relatorio');
   if ($('mLoja')) $('mLoja').onclick = () => ir('loja');
   if ($('mBackup')) $('mBackup').onclick = baixarBackup;
@@ -127,6 +132,7 @@ function telaRelatorio() {
   const semCons = S.ordens.filter((o) => o.status === 'sem_conserto' && noMes(o.entregue_em || o.updated_at));
   const comValor = entregues.filter((o) => valorDe(o) != null);
   const fat = comValor.reduce((s, o) => s + valorDe(o), 0);
+  const aReceber = entregues.filter(fiadoAberto).reduce((s, o) => s + (valorDe(o) || 0), 0);
   const semValor = entregues.length - comValor.length;
   const tempos = entregues.filter((o) => o.entregue_em).map((o) => (new Date(o.entregue_em) - new Date(o.created_at)) / 86400000);
   const tempoMedio = tempos.length ? tempos.reduce((a, b) => a + b, 0) / tempos.length : 0;
@@ -153,9 +159,10 @@ function telaRelatorio() {
       <h3>Faturamento (entregues no mês)</h3>
       <div style="font-size:28px;font-weight:800;color:var(--verde)">${moeda(fat)}</div>
       <div class="small muted">Ticket médio: ${comValor.length ? moeda(fat / comValor.length) : '—'} · Tempo médio de conserto: ${tempos.length ? tempoMedio.toFixed(1).replace('.', ',') + ' dias' : '—'}</div>
+      ${aReceber ? `<div class="alerta small" style="margin-top:8px">🧾 Deste total, ${moeda(aReceber)} ainda é fiado a receber.</div>` : ''}
       ${semValor ? `<div class="alerta small" style="margin-top:8px">${semValor} entrega(s) sem valor registrado — não entram no total.</div>` : ''}
     </div>
-    <div class="card"><h3>Por forma de pagamento</h3>${barras(agrupar(entregues, (o) => o.forma_pagamento || 'Não informado', true), true)}</div>
+    <div class="card"><h3>Por forma de pagamento</h3>${barras(agrupar(entregues, (o) => pagEfetivo(o), true), true)}</div>
     <div class="card"><h3>Por técnico (entregues)</h3>${barras(agrupar(entregues, (o) => o.tecnico ? nomeDe(o.tecnico) : 'Sem técnico', true), true)}</div>
     <div class="card"><h3>Aparelhos que mais entraram</h3>${barras(agrupar(entraram, (o) => o.aparelho).slice(0, 6))}</div>
     <div class="card"><h3>Situação das abertas</h3>${barras(abertas)}</div>
