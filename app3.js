@@ -124,7 +124,7 @@ function telaOrdem() {
     <div class="card">
       <h3>Fotos (${o.fotos.length})</h3>
       <div class="fotos">
-        ${o.fotos.map((p) => `<img data-path="${esc(p)}" alt="foto">`).join('')}
+        ${o.fotos.map((p) => `<div class="foto"><img data-path="${esc(p)}" alt="foto"><button class="foto-x" data-apagar="${esc(p)}" aria-label="Apagar foto">✕</button></div>`).join('')}
       </div>
       ${botoesFoto('addFoto')}
       <div id="fotoStatus" class="muted small"></div>
@@ -181,6 +181,7 @@ function telaOrdem() {
     $('orcValor').dataset.orig = $('orcValor').value; $('orcDet').dataset.orig = $('orcDet').value;
     atualizarTela();
   };
+  $app.querySelectorAll('[data-apagar]').forEach((b) => b.onclick = (ev) => { ev.stopPropagation(); apagarFoto(o.id, b.dataset.apagar); });
   ligarFotos('addFoto', (files) => enviarFotos(o.id, files, $('fotoStatus')));
   const enviarNota = async () => {
     const n = $('nota'); const texto = n.value.trim(); if (!texto) return;
@@ -250,4 +251,14 @@ async function enviarFotos(ordemId, files, statusEl) {
   if (!novos.length) return;
   const atual = (S.ordens.find((x) => x.id === ordemId) || { fotos: [] }).fotos;
   await salvarOrdem(ordemId, { fotos: atual.concat(novos) }, novos.length + ' foto(s) adicionada(s)');
+}
+
+async function apagarFoto(ordemId, path) {
+  if (!confirm('Apagar esta foto?\n\nNão dá para desfazer.')) return;
+  const o = S.ordens.find((x) => x.id === ordemId); if (!o) return;
+  const r = await salvarOrdem(ordemId, { fotos: o.fotos.filter((p) => p !== path) }, 'Foto apagada');
+  if (!r) return;
+  delete S.fotoUrls[path];
+  const { error } = await sb.storage.from('fotos').remove([path]);
+  if (error) console.warn('arquivo da foto não removido', error);
 }

@@ -71,6 +71,8 @@ label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 5px; }
 .info dd { margin: 2px 0 0; white-space: pre-wrap; }
 
 .fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.foto { position: relative; }
+.foto-x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; }
 .fotos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: #e5e7eb; cursor: pointer; }
 .add-foto { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; border: 2px dashed #cbd5e1;
   border-radius: 8px; color: var(--muted); font-size: 13px; text-align: center; cursor: pointer; }

@@ -45,7 +45,7 @@ function formOrdem() {
     <div class="card">
       <h3>Fotos do aparelho</h3>
       ${botoesFoto('f-fotos')}
-      <div id="f-fotos-qtd" class="muted small" style="margin-top:6px">${S.novasFotos.length ? S.novasFotos.length + ' foto(s) selecionada(s)' : ''}</div>
+      <div style="margin-top:6px"><span id="f-fotos-qtd" class="muted small">${S.novasFotos.length ? S.novasFotos.length + ' foto(s) selecionada(s)' : ''}</span> <button type="button" class="btn sec" id="f-fotos-limpar" style="display:${S.novasFotos.length ? 'inline-block' : 'none'};padding:4px 10px;min-height:0">✕ Tirar fotos escolhidas</button></div>
     </div>`}
     <div class="btns" style="margin-bottom:24px"><button class="btn full" id="f-salvar">${editando ? 'Salvar alterações' : 'Cadastrar aparelho'}</button></div>
     <div id="f-erro"></div>
@@ -96,7 +96,12 @@ function formOrdem() {
   ligarFotos('f-fotos', (files) => {
     S.novasFotos = S.novasFotos.concat(files);
     $('f-fotos-qtd').textContent = S.novasFotos.length + ' foto(s) selecionada(s) — pode tirar mais';
+    $('f-fotos-limpar').style.display = 'inline-block';
   });
+  $('f-fotos-limpar').onclick = () => {
+    S.novasFotos = []; $('f-fotos-qtd').textContent = 'Fotos removidas — escolha de novo se quiser';
+    $('f-fotos-limpar').style.display = 'none';
+  };
   const btn = $('f-salvar');
   btn.onclick = async () => {
     const campos = {};
