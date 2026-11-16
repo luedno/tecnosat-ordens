@@ -270,8 +270,12 @@ function telaComprovante() {
     </div>`;
   document.getElementById('c-voltar').onclick = () => ir('ordem');
   document.getElementById('c-print').onclick = () => window.print();
-  document.getElementById('c-zap').onclick = () => abrirZap(o.cliente_telefone, entrega
-    ? `Olá ${o.cliente_nome.split(' ')[0]}! Obrigado por escolher a ${empresa()}. Seu aparelho (${o.aparelho}) foi entregue${o.garantia_ate ? ' com garantia até ' + fmtDia(o.garantia_ate) : ''}. OS #${o.numero}.\n\nDetalhes: ${link}`
-    : `Olá ${o.cliente_nome.split(' ')[0]}! Recebemos seu aparelho (${o.aparelho}) na ${empresa()}. Ordem de serviço #${o.numero}.\n\nAcompanhe o conserto por aqui: ${link}`);
+  document.getElementById('c-zap').onclick = () => {
+    const nome = (o.cliente_nome || '').split(' ')[0];
+    const ap = [o.aparelho, o.marca, o.modelo].filter(Boolean).join(' ');
+    abrirZap(o.cliente_telefone, entrega
+      ? montarMsg(nome, 'Seu aparelho foi entregue. Obrigado por escolher a ' + empresa() + '! 🙏', ['📱 Aparelho: ' + ap, '🧾 OS: *#' + o.numero + '*', o.garantia_ate ? '🛡️ Garantia até *' + fmtDia(o.garantia_ate) + '*' : null], link)
+      : montarMsg(nome, 'Recebemos o seu aparelho na ' + empresa() + '. ✅', ['📱 Aparelho: ' + ap, '🧾 OS: *#' + o.numero + '*'], link));
+  };
   window.scrollTo(0, 0);
 }

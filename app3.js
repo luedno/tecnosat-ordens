@@ -1,22 +1,33 @@
 /* App TecnoSat — parte 3 de 8: detalhe da ordem e fotos (não precisa mexer) */
 
+// Monta mensagens organizadas para o WhatsApp (negrito com *...*, poucos emojis)
+function montarMsg(nome, frase, linhas, link) {
+  const p = ['Olá, *' + nome + '*! 👋', '', frase];
+  const info = (linhas || []).filter((x) => x !== null && x !== undefined && x !== false);
+  if (info.length) p.push('', ...info);
+  if (link) p.push('', '🔎 Acompanhe pelo link:', link);
+  p.push('', '_' + empresa() + '_');
+  return p.join('\n');
+}
 function mensagemZap(o) {
-  const emp = empresa();
   const ap = [o.aparelho, o.marca, o.modelo].filter(Boolean).join(' ');
   const nome = (o.cliente_nome || '').split(' ')[0];
   const orc = S.orc[o.id];
   const v = orc ? (orc.valor_final != null ? orc.valor_final : orc.valor) : null;
-  const valor = souDono() && v != null ? ' O valor do serviço é ' + moeda(v) + '.' : '';
-  const link = '\n\nAcompanhe seu aparelho aqui: ' + linkCliente(o);
+  const dAp = '📱 Aparelho: ' + ap;
+  const dOs = '🧾 OS: *#' + o.numero + '*';
+  const dVal = souDono() && v != null ? '💰 Valor: *' + moeda(v) + '*' : null;
+  const dEnd = S.loja.endereco ? '📍 ' + S.loja.endereco : null;
+  const link = linkCliente(o);
   switch (o.status) {
-    case 'recebido': return `Olá ${nome}! Recebemos seu aparelho (${ap}) aqui na ${emp}. O número da sua ordem de serviço é #${o.numero}. Avisaremos assim que tivermos o diagnóstico.` + link;
-    case 'em_analise': return `Olá ${nome}! Seu aparelho (${ap}) já está em análise aqui na ${emp}. Em breve damos retorno. OS #${o.numero}.` + link;
-    case 'aguardando_aprovacao': return `Olá ${nome}! Avaliamos seu aparelho (${ap}).${o.diagnostico ? ' Diagnóstico: ' + o.diagnostico + '.' : ''}${valor} Podemos fazer o conserto? OS #${o.numero}.`;
-    case 'aguardando_peca': return `Olá ${nome}! O conserto do seu aparelho (${ap}) está aguardando a chegada da peça. Assim que chegar, avisamos. OS #${o.numero}.` + link;
-    case 'em_conserto': return `Olá ${nome}! Seu aparelho (${ap}) já está em conserto aqui na ${emp}. OS #${o.numero}.` + link;
-    case 'pronto': return `Olá ${nome}! Seu aparelho (${ap}) está PRONTO para retirada aqui na ${emp}!${valor} OS #${o.numero}.` + (S.loja.endereco ? '\nEndereço: ' + S.loja.endereco : '');
-    case 'sem_conserto': return `Olá ${nome}! Infelizmente seu aparelho (${ap}) não tem conserto.${o.diagnostico ? ' Motivo: ' + o.diagnostico + '.' : ''} Ele já pode ser retirado aqui na ${emp}. OS #${o.numero}.`;
-    default: return `Olá ${nome}! Obrigado por escolher a ${emp}.${o.garantia_ate ? ' Seu serviço tem garantia até ' + fmtDia(o.garantia_ate) + '.' : ''} Qualquer coisa estamos à disposição. OS #${o.numero}.`;
+    case 'recebido': return montarMsg(nome, 'Recebemos o seu aparelho. Assim que tivermos o diagnóstico, avisamos! ✅', [dAp, dOs], link);
+    case 'em_analise': return montarMsg(nome, 'Seu aparelho já está *em análise* com a nossa equipe. 🔧', [dAp, dOs, 'Em breve damos o retorno.'], link);
+    case 'aguardando_aprovacao': return montarMsg(nome, 'Avaliamos o seu aparelho e o orçamento está pronto:', [dAp, dOs, o.diagnostico ? '🔍 Diagnóstico: ' + o.diagnostico : null, dVal, '', 'Podemos fazer o conserto? Responda *SIM* ou *NÃO*.']);
+    case 'aguardando_peca': return montarMsg(nome, 'O conserto está *aguardando a chegada de uma peça*. ⏳', [dAp, dOs, 'Assim que ela chegar, avisamos você.'], link);
+    case 'em_conserto': return montarMsg(nome, 'Seu aparelho já está *em conserto*. 🔧', [dAp, dOs], link);
+    case 'pronto': return montarMsg(nome, 'Boa notícia: seu aparelho está *PRONTO* para retirada! 🎉', [dAp, dOs, dVal, dEnd]);
+    case 'sem_conserto': return montarMsg(nome, 'Infelizmente seu aparelho *não tem conserto*.' + (o.diagnostico ? ' Motivo: ' + o.diagnostico + '.' : ''), [dAp, dOs, 'Ele já pode ser retirado aqui conosco.', dEnd]);
+    default: return montarMsg(nome, 'Obrigado por escolher a ' + empresa() + '! 🙏', [dAp, dOs, o.garantia_ate ? '🛡️ Garantia até *' + fmtDia(o.garantia_ate) + '*' : null, 'Qualquer coisa, estamos à disposição.'], link);
   }
 }
 
@@ -160,7 +171,7 @@ function telaOrdem() {
   $('linkCli').onclick = async () => {
     const link = linkCliente(o);
     if (navigator.share) { try { await navigator.share({ title: 'Acompanhe sua OS #' + o.numero, text: 'Acompanhe o conserto do seu aparelho (' + o.aparelho + '):', url: link }); return; } catch (_) { return; } }
-    abrirZap(o.cliente_telefone, 'Olá! Acompanhe o conserto do seu aparelho (' + o.aparelho + ') por este link: ' + link);
+    abrirZap(o.cliente_telefone, montarMsg((o.cliente_nome || '').split(' ')[0], 'Você pode acompanhar o andamento do seu aparelho (' + o.aparelho + ') a qualquer momento:', ['🧾 OS: *#' + o.numero + '*'], link));
   };
   $('comprovante').onclick = () => ir('comprovante', { compTipo: 'entrada' });
   if ($('compEntrega')) $('compEntrega').onclick = () => ir('comprovante', { compTipo: 'entrega' });

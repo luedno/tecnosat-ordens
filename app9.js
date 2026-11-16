@@ -40,7 +40,7 @@ function telaFiados() {
   `, { voltar: () => ir('menu'), aba: 'menu' });
   $app.querySelectorAll('[data-cobrar]').forEach((b) => b.onclick = () => {
     const o = S.ordens.find((x) => x.id === b.dataset.cobrar); const v = (S.orc[o.id] || {}).valor_final;
-    abrirZap(o.cliente_telefone, `Olá ${String(o.cliente_nome).split(' ')[0]}, tudo bem? Aqui é da ${empresa()}. Passando para lembrar do pagamento do serviço (${o.aparelho || 'aparelho'}, OS #${o.numero})${v != null ? ' no valor de ' + moeda(v) : ''}, entregue em ${fmtData(o.entregue_em)}. Pode nos informar quando conseguir acertar? Obrigado!`);
+    abrirZap(o.cliente_telefone, montarMsg(String(o.cliente_nome).split(' ')[0], 'Passando para lembrar do pagamento do serviço, entregue em ' + fmtData(o.entregue_em) + '. 🧾', ['📱 Aparelho: ' + (o.aparelho || ''), '🧾 OS: *#' + o.numero + '*', v != null ? '💰 Valor: *' + moeda(v) + '*' : null, '', 'Pode nos avisar quando conseguir acertar? Obrigado! 🙏']));
   });
   $app.querySelectorAll('[data-abrir]').forEach((b) => b.onclick = () => abrirOrdem(b.dataset.abrir));
   $app.querySelectorAll('[data-receber]').forEach((b) => b.onclick = () => ir('receber', { ordemId: b.dataset.receber }));
