@@ -353,7 +353,7 @@ document.addEventListener('visibilitychange', async () => {
 const TELAS_FORM = ['formOrdem', 'formAgenda', 'entrega', 'loja', 'formCliente'];
 function atualizarTela() {
   if (!S.perfil || !['dono', 'funcionario'].includes(S.perfil.papel)) return;
-  if (TELAS_FORM.includes(S.tela) || S.tela === 'comprovante') return;
+  if (TELAS_FORM.includes(S.tela) || S.tela === 'comprovante' || S.mic) return;
   const ae = document.activeElement;
   if (ae && ['INPUT', 'TEXTAREA', 'SELECT'].includes(ae.tagName) && !['busca', 'cliBusca'].includes(ae.id)) return;
   if (Array.from(document.querySelectorAll('[data-orig]')).some((el) => el.value !== el.dataset.orig)) return;
@@ -384,8 +384,10 @@ function moldura(titulo, corpo, opt) {
   $app.querySelectorAll('[data-ir]').forEach((b) => b.onclick = () => ir(b.dataset.ir));
   const v = document.getElementById('voltar'); if (v) v.onclick = opt.voltar;
   const f = document.getElementById('fab'); if (f) f.onclick = opt.fab;
+  ligarMic();
 }
 function ir(tela, extra) {
+  if (S.mic) S.mic.stop();
   S.tela = tela; Object.assign(S, extra || {});
   render(); window.scrollTo(0, 0);
 }
@@ -409,4 +411,44 @@ function render() {
     case 'loja': return souDono() ? telaLoja() : ir('menu');
     default: S.tela = 'ordens'; return telaOrdens();
   }
+}
+
+// ---------------------------------------------------------- microfone (fala vira texto)
+const CAMPOS_MIC = ['f-defeito', 'f-observacoes', 'diag', 'orcDet', 'nota', 'a-descricao'];
+function ligarMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return; // navegador sem reconhecimento de voz: o botão não aparece
+  CAMPOS_MIC.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.dataset.mic) return;
+    el.dataset.mic = '1';
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn sec mic'; b.textContent = '🎤 Falar';
+    el.insertAdjacentElement('afterend', b);
+    b.onclick = () => {
+      if (S.mic) { S.mic.stop(); return; }
+      const r = new SR();
+      r.lang = 'pt-BR'; r.continuous = true; r.interimResults = true;
+      const base = el.value.trim();
+      let final = '';
+      r.onresult = (ev) => {
+        let parcial = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) final += (final ? ' ' : '') + t.trim(); else parcial += t;
+        }
+        let txt = (final + (parcial ? ' ' + parcial.trim() : '')).trim();
+        if (txt) txt = txt.charAt(0).toUpperCase() + txt.slice(1);
+        el.value = [base, txt].filter(Boolean).join(base && /[.!?]$/.test(base) ? ' ' : (base ? '. ' : ''));
+      };
+      r.onerror = (ev) => {
+        if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') alert('O microfone foi bloqueado. Toque no cadeado ao lado do endereço do site e permita o microfone.');
+        else if (ev.error === 'no-speech') toast('Não ouvi nada. Tente de novo.');
+        else if (ev.error === 'network') toast('Precisa de internet para transcrever.');
+      };
+      r.onend = () => { S.mic = null; b.textContent = '🎤 Falar'; b.classList.remove('gravando'); };
+      try { r.start(); } catch (_) { return; }
+      S.mic = r; b.textContent = '⏹ Parar'; b.classList.add('gravando');
+    };
+  });
 }
