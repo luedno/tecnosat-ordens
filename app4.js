@@ -98,7 +98,7 @@ function formOrdem() {
     $('f-fotos-qtd').textContent = S.novasFotos.length + ' foto(s) selecionada(s) — pode tirar mais';
     $('f-fotos-limpar').style.display = 'inline-block';
   });
-  $('f-fotos-limpar').onclick = () => {
+  if ($('f-fotos-limpar')) $('f-fotos-limpar').onclick = () => {
     S.novasFotos = []; $('f-fotos-qtd').textContent = 'Fotos removidas — escolha de novo se quiser';
     $('f-fotos-limpar').style.display = 'none';
   };
