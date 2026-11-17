@@ -26,6 +26,7 @@ function mensagemZap(o) {
     case 'aguardando_peca': return montarMsg(nome, 'O conserto está *aguardando a chegada de uma peça*. ⏳', [dAp, dOs, 'Assim que ela chegar, avisamos você.'], link);
     case 'em_conserto': return montarMsg(nome, 'Seu aparelho já está *em conserto*. 🔧', [dAp, dOs], link);
     case 'pronto': return montarMsg(nome, 'Boa notícia: seu aparelho está *PRONTO* para retirada! 🎉', [dAp, dOs, dVal, dEnd]);
+    case 'nao_aprovado': return montarMsg(nome, 'Entendemos que você optou por *não fazer o conserto* agora. 👍', [dAp, dOs, 'Seu aparelho já pode ser retirado aqui conosco.', dEnd, '', 'Se mudar de ideia, é só nos chamar. 🙂']);
     case 'sem_conserto': return montarMsg(nome, 'Infelizmente seu aparelho *não tem conserto*.' + (o.diagnostico ? ' Motivo: ' + o.diagnostico + '.' : ''), [dAp, dOs, 'Ele já pode ser retirado aqui conosco.', dEnd]);
     default: return montarMsg(nome, 'Obrigado por escolher a ' + empresa() + '! 🙏', [dAp, dOs, o.garantia_ate ? '🛡️ Garantia até *' + fmtDia(o.garantia_ate) + '*' : null, 'Qualquer coisa, estamos à disposição.'], link);
   }
@@ -164,7 +165,9 @@ function telaOrdem() {
   $app.querySelectorAll('[data-abrir]').forEach((b) => b.onclick = () => abrirOrdem(b.dataset.abrir));
   $app.querySelectorAll('[data-st]').forEach((b) => b.onclick = () => {
     if (b.dataset.st === 'entregue' && o.status !== 'entregue') return ir('entrega');
-    salvarOrdem(o.id, { status: b.dataset.st }, 'Situação: ' + ST[b.dataset.st]);
+    const campos = { status: b.dataset.st };
+    if (b.dataset.st === 'nao_aprovado') campos.orcamento_status = 'recusado';
+    salvarOrdem(o.id, campos, 'Situação: ' + ST[b.dataset.st]);
   });
   $app.querySelectorAll('[data-tec]').forEach((b) => b.onclick = () => salvarOrdem(o.id, { tecnico: b.dataset.tec || null }, b.dataset.tec ? 'Técnico: ' + nomeDe(b.dataset.tec) : 'Sem técnico'));
   $app.querySelectorAll('[data-orc]').forEach((b) => b.onclick = () => salvarOrdem(o.id, { orcamento_status: b.dataset.orc }, 'Orçamento: ' + ORC[b.dataset.orc]));

@@ -1,5 +1,5 @@
 // Permite instalar o app e receber notificações. Sempre busca a versão mais nova quando há internet.
-const CACHE = 'os-v12';
+const CACHE = 'os-v13';
 const ARQUIVOS = ['./', 'index.html', 'style.css', 'config.js', 'manifest.json', 'icon-192.png',
   'app1.js', 'app2.js', 'app3.js', 'app4.js', 'app5.js', 'app6.js', 'app7.js', 'app8.js', 'app9.js'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });

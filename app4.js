@@ -144,7 +144,7 @@ function telaEntrega() {
   if (!o) return ir('ordens');
   const orc = S.orc[o.id] || {};
   const jaEntregue = o.status === 'entregue' || (o.status === 'sem_conserto' && o.entregue_em);
-  const semConserto = o.status === 'sem_conserto';
+  const semConserto = o.status === 'sem_conserto' || o.status === 'nao_aprovado';
   let pag = o.forma_pagamento || '';
   let gar = o.garantia_dias != null ? o.garantia_dias : (semConserto ? 0 : Number(S.loja.garantia_padrao || 90));
   const vPadrao = orc.valor_final != null ? orc.valor_final : orc.valor;
@@ -184,7 +184,7 @@ function telaEntrega() {
     const dias = semConserto ? 0 : (outro !== '' ? Number(outro) : gar);
     const campos = { retirado_por: val('e-ret') || null, forma_pagamento: pag || null, garantia_dias: dias || null };
     if (!jaEntregue) {
-      if (semConserto) campos.entregue_em = new Date().toISOString(); else campos.status = 'entregue';
+      if (o.status === 'sem_conserto') campos.entregue_em = new Date().toISOString(); else campos.status = 'entregue';
     }
     const btn = $('e-salvar'); btn.disabled = true;
     if (souDono() && $('e-valor')) {

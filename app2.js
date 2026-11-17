@@ -5,7 +5,8 @@ function parados() {
   const pronto = S.ordens.filter((o) => o.status === 'pronto' && diasDesde(o.updated_at) >= lp);
   const peca = S.ordens.filter((o) => o.status === 'aguardando_peca' && diasDesde(o.updated_at) >= lc);
   const aprov = S.ordens.filter((o) => o.status === 'aguardando_aprovacao' && diasDesde(o.updated_at) >= 5);
-  return { pronto, peca, aprov, lp, lc, ids: new Set([...pronto, ...peca, ...aprov].map((o) => o.id)) };
+  const naoAprov = S.ordens.filter((o) => o.status === 'nao_aprovado' && diasDesde(o.updated_at) >= lp);
+  return { pronto, peca, aprov, naoAprov, lp, lc, ids: new Set([...pronto, ...peca, ...aprov, ...naoAprov].map((o) => o.id)) };
 }
 
 function telaOrdens() {
@@ -39,6 +40,7 @@ function desenharLista() {
   if (pr.pronto.length) avisos.push(`<b>${pr.pronto.length}</b> pronto(s) há mais de ${pr.lp} dias sem retirada`);
   if (pr.peca.length) avisos.push(`<b>${pr.peca.length}</b> aguardando peça há mais de ${pr.lc} dias`);
   if (pr.aprov.length) avisos.push(`<b>${pr.aprov.length}</b> aguardando aprovação há mais de 5 dias`);
+  if (pr.naoAprov.length) avisos.push(`<b>${pr.naoAprov.length}</b> não aprovado(s) há mais de ${pr.lp} dias sem o cliente buscar`);
   alertasEl.innerHTML = avisos.length ? `<div class="alerta" id="verParados">⚠️ ${avisos.join('<br>⚠️ ')}<div class="small" style="margin-top:4px">Toque para ver</div></div>` : '';
   const vp = document.getElementById('verParados'); if (vp) vp.onclick = () => { S.filtro = 'parados'; desenharLista(); };
 
