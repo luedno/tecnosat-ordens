@@ -7,7 +7,7 @@
   const t = new URLSearchParams(location.search).get('t');
   if (!t || !window.supabase) { el.innerHTML = '<div class="card center">Link inválido. Confira o link que você recebeu.</div>'; return; }
   const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, { auth: { persistSession: false } });
-  const { data, error } = await sb.rpc('consulta_os', { t });
+  const { data, error } = await sb.rpc('consulta_os2', { t });
   if (error) { el.innerHTML = '<div class="card center">Não foi possível consultar agora.<br><small>' + esc(error.message) + '</small></div>'; return; }
   const o = data && data[0];
   if (!o) { el.innerHTML = '<div class="card center">Ordem de serviço não encontrada.<br>Confira o link que você recebeu.</div>'; return; }
@@ -17,7 +17,16 @@
   const passos = [['recebido', 'Recebido na loja'], ['em_analise', 'Em análise'], ['orcamento', 'Orçamento'], ['em_conserto', 'Em conserto'], ['pronto', 'Pronto para retirada'], ['entregue', 'Entregue']];
   const pos = { recebido: 0, em_analise: 1, aguardando_aprovacao: 2, aguardando_peca: 3, em_conserto: 3, pronto: 4, entregue: 5, sem_conserto: 4, nao_aprovado: 2 }[o.status] ?? 0;
   let aviso = '';
-  if (o.status === 'aguardando_aprovacao') aviso = '<div class="destaque amarelo">⏳ Estamos aguardando sua aprovação do orçamento. Fale com a gente pelo WhatsApp.</div>';
+  const moeda = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  if (o.status === 'aguardando_aprovacao') aviso = `<div class="orc">
+      <div class="orc-t">📋 Orçamento do conserto</div>
+      ${o.diagnostico ? '<div>🔍 ' + esc(o.diagnostico) + '</div>' : ''}
+      ${o.orc_detalhes ? '<div class="muted">' + esc(o.orc_detalhes) + '</div>' : ''}
+      ${o.orc_valor != null ? '<div class="orc-v">' + moeda(o.orc_valor) + '</div>' : ''}
+      <div class="orc-b"><button id="aprovar" class="b-ok">✔ Aprovar conserto</button><button id="recusar" class="b-no">Não aprovar</button></div>
+      <div class="muted" style="font-size:13px">Sua resposta vai direto para a loja.</div>
+      <div id="orcMsg"></div>
+    </div>`;
   if (o.status === 'aguardando_peca') aviso = '<div class="destaque amarelo">📦 Estamos aguardando a chegada da peça para o conserto.</div>';
   if (o.status === 'pronto') aviso = '<div class="destaque verde">✅ Seu aparelho está pronto! Pode vir buscar.</div>';
   if (o.status === 'nao_aprovado') aviso = '<div class="destaque amarelo">📦 O orçamento não foi aprovado. Seu aparelho já pode ser retirado na loja.</div>';
@@ -43,4 +52,18 @@
     </div>
     ${zapN ? `<a class="btn" href="https://wa.me/${zapN}?text=${encodeURIComponent('Olá! Quero saber sobre minha ordem de serviço #' + o.numero + '.')}">💬 Falar com a loja no WhatsApp</a>` : ''}
     ${o.loja_telefone ? `<p class="muted" style="text-align:center">📞 ${esc(o.loja_telefone)}</p>` : ''}`;
+  const responder = async (aprovar) => {
+    const ok = confirm(aprovar ? 'Confirmar: aprovar o conserto?' : 'Confirmar: NÃO aprovar o conserto?\n\nO aparelho ficará disponível para retirada.');
+    if (!ok) return;
+    document.querySelectorAll('.orc-b button').forEach((b) => b.disabled = true);
+    const r = await sb.rpc('responder_orcamento', { t, aprovar });
+    if (r.error || r.data === 'invalido') {
+      document.querySelectorAll('.orc-b button').forEach((b) => b.disabled = false);
+      document.getElementById('orcMsg').innerHTML = '<div class="destaque vermelho">Não deu para enviar agora. Tente de novo ou fale com a loja.<br><small>' + esc(r.error ? r.error.message : r.data) + '</small></div>';
+      return;
+    }
+    location.reload();
+  };
+  const ba = document.getElementById('aprovar'); if (ba) ba.onclick = () => responder(true);
+  const br = document.getElementById('recusar'); if (br) br.onclick = () => responder(false);
 })();

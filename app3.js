@@ -22,7 +22,7 @@ function mensagemZap(o) {
   switch (o.status) {
     case 'recebido': return montarMsg(nome, 'Recebemos o seu aparelho. Assim que tivermos o diagnóstico, avisamos! ✅', [dAp, dOs], link);
     case 'em_analise': return montarMsg(nome, 'Seu aparelho já está *em análise* com a nossa equipe. 🔧', [dAp, dOs, 'Em breve damos o retorno.'], link);
-    case 'aguardando_aprovacao': return montarMsg(nome, 'Avaliamos o seu aparelho e o orçamento está pronto:', [dAp, dOs, o.diagnostico ? '🔍 Diagnóstico: ' + o.diagnostico : null, dVal, '', 'Podemos fazer o conserto? Responda *SIM* ou *NÃO*.']);
+    case 'aguardando_aprovacao': return montarMsg(nome, 'Avaliamos o seu aparelho e o orçamento está pronto:', [dAp, dOs, o.diagnostico ? '🔍 Diagnóstico: ' + o.diagnostico : null, dVal, '', '👉 Toque no link abaixo para *aprovar ou não* o conserto (ou responda *SIM* ou *NÃO* aqui).'], link);
     case 'aguardando_peca': return montarMsg(nome, 'O conserto está *aguardando a chegada de uma peça*. ⏳', [dAp, dOs, 'Assim que ela chegar, avisamos você.'], link);
     case 'em_conserto': return montarMsg(nome, 'Seu aparelho já está *em conserto*. 🔧', [dAp, dOs], link);
     case 'pronto': return montarMsg(nome, 'Boa notícia: seu aparelho está *PRONTO* para retirada! 🎉', [dAp, dOs, dVal, dEnd]);
@@ -77,6 +77,7 @@ function telaOrdem() {
       </div>
       <div class="btns">
         <button class="btn sec" id="comprovante">🧾 Comprovante</button>
+        <button class="btn sec" id="etiqueta">🏷️ Etiqueta</button>
         <button class="btn sec" id="linkCli">🔗 Link de acompanhamento</button>
       </div>
       ${o.status !== 'entregue' && !(o.status === 'sem_conserto' && o.entregue_em) ? '<div class="btns"><button class="btn sec" id="prazoRet">⏳ Avisar prazo de retirada</button></div>' : ''}
@@ -179,6 +180,7 @@ function telaOrdem() {
     enviarComFoto(o, texto);
   };
   if ($('prazoRet')) $('prazoRet').onclick = () => avisarPrazo(o);
+  $('etiqueta').onclick = () => ir('etiqueta');
   $('comprovante').onclick = () => ir('comprovante', { compTipo: 'entrada' });
   if ($('compEntrega')) $('compEntrega').onclick = () => ir('comprovante', { compTipo: 'entrega' });
   if ($('verCli')) $('verCli').onclick = (e) => { e.preventDefault(); ir('cliente', { clienteId: o.cliente_id }); };

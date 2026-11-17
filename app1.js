@@ -20,7 +20,7 @@ const PAGAMENTOS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédit
 
 const S = {
   user: null, perfil: null, perfis: {}, ordens: [], agenda: [], orc: {}, cfgCom: {}, hist: {}, clientes: [], loja: {},
-  tela: 'ordens', filtro: 'abertas', meu: 'todas', busca: '', ordemId: null, agId: null, clienteId: null,
+  tela: 'hoje', filtro: 'abertas', meu: 'todas', busca: '', ordemId: null, agId: null, clienteId: null,
   agFiltro: 'proximos', cliBusca: '', relMes: null,
   online: false, canal: null, iniciado: null, fotoUrls: {}, prefill: null, novasFotos: [], voltarPara: null
 };
@@ -350,7 +350,7 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 // Só redesenha se a pessoa não estiver digitando
-const TELAS_FORM = ['formOrdem', 'formAgenda', 'entrega', 'loja', 'formCliente'];
+const TELAS_FORM = ['etiqueta', 'formOrdem', 'formAgenda', 'entrega', 'loja', 'formCliente'];
 function atualizarTela() {
   if (!S.perfil || !['dono', 'funcionario'].includes(S.perfil.papel)) return;
   if (TELAS_FORM.includes(S.tela) || S.tela === 'comprovante' || S.mic) return;
@@ -369,7 +369,7 @@ function moldura(titulo, corpo, opt) {
   const aba = (t, ic, nome, extra) => `<button class="${(S.tela === t || (opt.aba === t)) ? 'ativo' : ''}" data-ir="${t}"><b>${ic}</b>${nome}${extra || ''}</button>`;
   const nav = opt.semNav ? '' : `
     <nav class="baixo">
-      ${aba('ordens', '🛠️', 'Ordens')}${aba('agenda', '📅', 'Agenda')}${aba('clientes', '👤', 'Clientes')}
+      ${aba('hoje', '🏠', 'Hoje')}${aba('ordens', '🛠️', 'Ordens')}${aba('agenda', '📅', 'Agenda')}${aba('clientes', '👤', 'Clientes')}
       ${aba('menu', '☰', 'Menu', souDono() && pend ? ' <span class="bolinha">' + pend + '</span>' : '')}
     </nav>`;
   $app.innerHTML = `
@@ -397,6 +397,8 @@ function render() {
     case 'formOrdem': return formOrdem();
     case 'entrega': return telaEntrega();
     case 'comprovante': return telaComprovante();
+    case 'hoje': return telaHoje();
+    case 'etiqueta': return telaEtiqueta();
     case 'agenda': return telaAgenda();
     case 'formAgenda': return formAgenda();
     case 'clientes': return telaClientes();
