@@ -185,6 +185,8 @@ function telaLoja() {
         <div><label>WhatsApp</label><input id="j-whatsapp" type="tel" value="${v('whatsapp')}"></div>
       </div>
       <label>Condições do comprovante (uma por linha)</label><textarea id="j-termos" rows="6">${v('termos')}</textarea>
+      <label>Prazo para retirada de aparelho parado (dias)</label><input id="j-prazo_retirada" type="number" inputmode="numeric" min="1" value="${v('prazo_retirada') || 90}">
+      <p class="muted small">Usado no botão "Avisar prazo de retirada" da OS.</p>
       <label>Garantia padrão (dias)</label><input id="j-garantia_padrao" type="number" inputmode="numeric" value="${v('garantia_padrao')}">
       <div class="linha2">
         <div><label>Alerta "Pronto" parado (dias)</label><input id="j-alerta_pronto" type="number" inputmode="numeric" value="${v('alerta_pronto')}"></div>
@@ -199,6 +201,7 @@ function telaLoja() {
     ['nome', 'endereco', 'telefone', 'whatsapp', 'termos'].forEach((k) => { campos[k] = val('j-' + k) || null; });
     if (!campos.nome) return alert('Preencha o nome da loja.');
     ['garantia_padrao', 'alerta_pronto', 'alerta_peca'].forEach((k) => { const n = parseInt(val('j-' + k), 10); campos[k] = isNaN(n) ? 0 : n; });
+    { const n = parseInt(val('j-prazo_retirada'), 10); campos.prazo_retirada = isNaN(n) || n < 1 ? 90 : n; }
     const { data, error } = await sb.from('loja').update(campos).eq('id', 1).select().single();
     if (error) { document.getElementById('j-erro').innerHTML = '<div class="erro">' + esc(erroTexto(error)) + '</div>'; return; }
     S.loja = data; toast('✔ Dados da loja salvos'); ir('menu');

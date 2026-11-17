@@ -78,6 +78,7 @@ function telaOrdem() {
         <button class="btn sec" id="comprovante">🧾 Comprovante</button>
         <button class="btn sec" id="linkCli">🔗 Link de acompanhamento</button>
       </div>
+      ${o.status !== 'entregue' && !(o.status === 'sem_conserto' && o.entregue_em) ? '<div class="btns"><button class="btn sec" id="prazoRet">⏳ Avisar prazo de retirada</button></div>' : ''}
       <p class="muted small">A mensagem do WhatsApp é montada de acordo com a situação e já leva o link para o cliente acompanhar.</p>
     </div>
 
@@ -174,6 +175,7 @@ function telaOrdem() {
     const texto = montarMsg((o.cliente_nome || '').split(' ')[0], 'Acompanhe o conserto do seu aparelho em tempo real, a qualquer hora. 📲', ['📱 Aparelho: ' + ap, '🧾 OS: *#' + o.numero + '*', '📌 Situação atual: *' + ST[o.status] + '*'], link);
     enviarComFoto(o, texto);
   };
+  if ($('prazoRet')) $('prazoRet').onclick = () => avisarPrazo(o);
   $('comprovante').onclick = () => ir('comprovante', { compTipo: 'entrada' });
   if ($('compEntrega')) $('compEntrega').onclick = () => ir('comprovante', { compTipo: 'entrega' });
   if ($('verCli')) $('verCli').onclick = (e) => { e.preventDefault(); ir('cliente', { clienteId: o.cliente_id }); };
@@ -303,4 +305,27 @@ async function enviarComFoto(o, texto) {
     } catch (_) { /* sem foto: segue só com o texto */ }
   }
   abrirZap(o.cliente_telefone, texto);
+}
+
+// ---------------------------------------------------------- aviso de prazo para retirada
+async function avisarPrazo(o) {
+  const dias = Number(S.loja.prazo_retirada) || 90;
+  const lim = new Date(); lim.setDate(lim.getDate() + dias);
+  const limTxt = fmtData(lim);
+  if (!confirm('Enviar aviso ao cliente?\n\nPrazo para retirada: ' + dias + ' dias (até ' + limTxt + ').\nO envio fica registrado no histórico da OS.')) return;
+  const ap = [o.aparelho, o.marca, o.modelo].filter(Boolean).join(' ');
+  const texto = montarMsg((o.cliente_nome || '').split(' ')[0], 'Seu aparelho continua aqui conosco, *aguardando retirada*. 📦', [
+    '📱 Aparelho: ' + ap,
+    '🧾 OS: *#' + o.numero + '*',
+    '📥 Entrada: ' + fmtData(o.created_at),
+    '⏳ Retirar até: *' + limTxt + '*',
+    '',
+    '⚠️ Conforme as condições da ordem de serviço, aparelhos não retirados até essa data poderão ser *descartados ou vendidos para cobrir custos*.',
+    '',
+    S.loja.endereco ? '📍 ' + S.loja.endereco : null,
+    'Qualquer dúvida, é só responder esta mensagem. 🙂'
+  ]);
+  await sb.from('historico').insert({ ordem_id: o.id, usuario: S.user.id, texto: '⏳ Aviso de prazo de retirada enviado: até ' + limTxt + ' (' + dias + ' dias)' });
+  carregarHist(o.id).then(() => atualizarTela());
+  enviarComFoto(o, texto);
 }
