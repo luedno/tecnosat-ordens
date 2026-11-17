@@ -28,10 +28,6 @@ function formOrdem() {
       <label>Nº de série / IMEI</label><input id="f-numero_serie" value="${v('numero_serie')}">
       <label>Acessórios deixados</label><input id="f-acessorios" value="${v('acessorios')}" placeholder="Ex.: controle remoto, cabo, carregador">
       <label>Defeito relatado pelo cliente</label><textarea id="f-defeito">${v('defeito')}</textarea>
-      <label>Estado do aparelho na entrada (toque para marcar)</label>
-      <div class="chips quebra" id="check">
-        ${CHECKLIST.map((c) => `<button type="button" class="chip ${marcados.has(c) ? 'ativo' : ''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}
-      </div>
       <label>Senha / padrão de desbloqueio</label><input id="f-senha_aparelho" value="${v('senha_aparelho')}" autocomplete="off" placeholder="Se o cliente informar">
       <label>Previsão de entrega</label><input id="f-previsao" type="date" value="${v('previsao')}">
       <label>Observações</label><textarea id="f-observacoes" placeholder="Arranhões, estado do aparelho, etc.">${v('observacoes')}</textarea>
@@ -273,9 +269,10 @@ function telaComprovante() {
   document.getElementById('c-zap').onclick = () => {
     const nome = (o.cliente_nome || '').split(' ')[0];
     const ap = [o.aparelho, o.marca, o.modelo].filter(Boolean).join(' ');
-    abrirZap(o.cliente_telefone, entrega
+    enviarComFoto(o, entrega
       ? montarMsg(nome, 'Seu aparelho foi entregue. Obrigado por escolher a ' + empresa() + '! 🙏', ['📱 Aparelho: ' + ap, '🧾 OS: *#' + o.numero + '*', o.garantia_ate ? '🛡️ Garantia até *' + fmtDia(o.garantia_ate) + '*' : null], link)
       : montarMsg(nome, 'Recebemos o seu aparelho na ' + empresa() + '. ✅', ['📱 Aparelho: ' + ap, '🧾 OS: *#' + o.numero + '*'], link));
   };
+  prepararFoto(o);
   window.scrollTo(0, 0);
 }

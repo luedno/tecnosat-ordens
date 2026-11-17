@@ -54,7 +54,15 @@ function telaAgenda() {
   });
   $app.querySelectorAll('[data-zap]').forEach((b) => b.onclick = () => {
     const a = acha(b.dataset.zap);
-    abrirZap(a.cliente_telefone, `Olá ${a.cliente_nome.split(' ')[0]}! Aqui é da ${empresa()}. Confirmando nossa visita no dia ${fmtData(a.data_hora)} às ${fmtHora(a.data_hora)}${a.aparelho ? ' para olhar seu aparelho (' + a.aparelho + ')' : ''}. Tudo certo?`);
+    const dia = new Date(a.data_hora).toLocaleDateString('pt-BR', { weekday: 'long' });
+    abrirZap(a.cliente_telefone, montarMsg(a.cliente_nome.split(' ')[0], 'Passando para *confirmar a nossa visita*. 🗓️', [
+      '📅 Data: *' + fmtData(a.data_hora) + '* (' + dia + ')',
+      '⏰ Horário: *' + fmtHora(a.data_hora) + '*',
+      a.aparelho ? '🔧 Aparelho: ' + a.aparelho : null,
+      a.endereco ? '📍 Local: ' + a.endereco : null,
+      '',
+      'Está tudo certo? Responda *SIM* para confirmar ou nos avise se precisar remarcar. 🙂'
+    ]));
   });
   $app.querySelectorAll('[data-ed]').forEach((b) => b.onclick = () => ir('formAgenda', { agId: b.dataset.ed }));
   $app.querySelectorAll('[data-os]').forEach((b) => b.onclick = () => {

@@ -167,11 +167,12 @@ function telaOrdem() {
   });
   $app.querySelectorAll('[data-tec]').forEach((b) => b.onclick = () => salvarOrdem(o.id, { tecnico: b.dataset.tec || null }, b.dataset.tec ? 'Técnico: ' + nomeDe(b.dataset.tec) : 'Sem técnico'));
   $app.querySelectorAll('[data-orc]').forEach((b) => b.onclick = () => salvarOrdem(o.id, { orcamento_status: b.dataset.orc }, 'Orçamento: ' + ORC[b.dataset.orc]));
-  $('zap').onclick = () => abrirZap(o.cliente_telefone, mensagemZap(o));
+  $('zap').onclick = () => enviarComFoto(o, mensagemZap(o));
   $('linkCli').onclick = async () => {
     const link = linkCliente(o);
-    if (navigator.share) { try { await navigator.share({ title: 'Acompanhe sua OS #' + o.numero, text: 'Acompanhe o conserto do seu aparelho (' + o.aparelho + '):', url: link }); return; } catch (_) { return; } }
-    abrirZap(o.cliente_telefone, montarMsg((o.cliente_nome || '').split(' ')[0], 'Você pode acompanhar o andamento do seu aparelho (' + o.aparelho + ') a qualquer momento:', ['🧾 OS: *#' + o.numero + '*'], link));
+    const ap = [o.aparelho, o.marca, o.modelo].filter(Boolean).join(' ');
+    const texto = montarMsg((o.cliente_nome || '').split(' ')[0], 'Acompanhe o conserto do seu aparelho em tempo real, a qualquer hora. 📲', ['📱 Aparelho: ' + ap, '🧾 OS: *#' + o.numero + '*', '📌 Situação atual: *' + ST[o.status] + '*'], link);
+    enviarComFoto(o, texto);
   };
   $('comprovante').onclick = () => ir('comprovante', { compTipo: 'entrada' });
   if ($('compEntrega')) $('compEntrega').onclick = () => ir('comprovante', { compTipo: 'entrega' });
@@ -214,6 +215,7 @@ function telaOrdem() {
     S.ordens = S.ordens.filter((x) => x.id !== o.id); toast('Ordem apagada'); ir('ordens');
   };
   carregarFotos(o.fotos);
+  prepararFoto(o);
 }
 
 // ---------------------------------------------------------- fotos
@@ -272,4 +274,33 @@ async function apagarFoto(ordemId, path) {
   delete S.fotoUrls[path];
   const { error } = await sb.storage.from('fotos').remove([path]);
   if (error) console.warn('arquivo da foto não removido', error);
+}
+
+// ---------------------------------------------------------- enviar mensagem com a foto do aparelho
+async function blobDaFoto(path) {
+  S.fotoBlob = S.fotoBlob || {};
+  if (S.fotoBlob[path]) return S.fotoBlob[path];
+  let u = S.fotoUrls[path] && S.fotoUrls[path].exp > Date.now() ? S.fotoUrls[path].url : null;
+  if (!u) { const r = await sb.storage.from('fotos').createSignedUrl(path, 3600); u = r.data && r.data.signedUrl; }
+  if (!u) return null;
+  const resp = await fetch(u); if (!resp.ok) return null;
+  S.fotoBlob[path] = await resp.blob();
+  return S.fotoBlob[path];
+}
+function prepararFoto(o) { if (o && o.fotos && o.fotos[0]) blobDaFoto(o.fotos[0]).catch(() => {}); }
+async function enviarComFoto(o, texto) {
+  const path = o.fotos && o.fotos[0];
+  if (path && navigator.canShare) {
+    try {
+      const blob = await blobDaFoto(path);
+      if (blob) {
+        const arq = new File([blob], 'aparelho-os-' + o.numero + '.jpg', { type: blob.type || 'image/jpeg' });
+        if (navigator.canShare({ files: [arq] })) {
+          try { await navigator.share({ files: [arq], text: texto }); } catch (e) { if (e && e.name === 'AbortError') return; abrirZap(o.cliente_telefone, texto); }
+          return;
+        }
+      }
+    } catch (_) { /* sem foto: segue só com o texto */ }
+  }
+  abrirZap(o.cliente_telefone, texto);
 }
