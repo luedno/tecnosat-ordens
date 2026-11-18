@@ -15,7 +15,7 @@
   document.getElementById('lojaEnd').textContent = o.loja_endereco || '';
   document.title = 'OS #' + o.numero + ' — ' + (o.loja_nome || 'TecnoSat');
   const passos = [['recebido', 'Recebido na loja'], ['em_analise', 'Em análise'], ['orcamento', 'Orçamento'], ['em_conserto', 'Em conserto'], ['pronto', 'Pronto para retirada'], ['entregue', 'Entregue']];
-  const pos = { recebido: 0, em_analise: 1, aguardando_aprovacao: 2, aguardando_peca: 3, em_conserto: 3, pronto: 4, entregue: 5, sem_conserto: 4, nao_aprovado: 2 }[o.status] ?? 0;
+  const pos = { recebido: 0, em_analise: 1, aguardando_aprovacao: 2, aguardando_peca: 3, em_conserto: 3, pronto: 4, entregue: 5, sem_conserto: 4, nao_aprovado: 2, aguardando_retirada: 4 }[o.status] ?? 0;
   let aviso = '';
   const moeda = (v) => 'R$ ' + Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   if (o.status === 'aguardando_aprovacao') aviso = `<div class="orc">
@@ -29,6 +29,7 @@
     </div>`;
   if (o.status === 'aguardando_peca') aviso = '<div class="destaque amarelo">📦 Estamos aguardando a chegada da peça para o conserto.</div>';
   if (o.status === 'pronto') aviso = '<div class="destaque verde">✅ Seu aparelho está pronto! Pode vir buscar.</div>';
+  if (o.status === 'aguardando_retirada') aviso = '<div class="destaque amarelo">📦 Seu aparelho está aguardando retirada. Pode vir buscar!</div>';
   if (o.status === 'nao_aprovado') aviso = '<div class="destaque amarelo">📦 O orçamento não foi aprovado. Seu aparelho já pode ser retirado na loja.</div>';
   if (o.status === 'sem_conserto') aviso = '<div class="destaque vermelho">Infelizmente o aparelho não tem conserto. Ele já pode ser retirado na loja.</div>';
   if (o.status === 'entregue') aviso = '<div class="destaque verde">✅ Aparelho entregue' + (o.entregue_em ? ' em ' + dia(o.entregue_em) : '') + '. Obrigado pela preferência!</div>';

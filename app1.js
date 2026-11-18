@@ -7,7 +7,7 @@ const $app = document.getElementById('app');
 const STATUS = [
   ['recebido', 'Recebido'], ['em_analise', 'Em análise'], ['aguardando_aprovacao', 'Aguardando aprovação'],
   ['aguardando_peca', 'Aguardando peça'], ['em_conserto', 'Em conserto'], ['pronto', 'Pronto'],
-  ['nao_aprovado', 'Não aprovado'], ['entregue', 'Entregue'], ['sem_conserto', 'Sem conserto']
+  ['nao_aprovado', 'Não aprovado'], ['entregue', 'Entregue'], ['sem_conserto', 'Sem conserto'], ['aguardando_retirada', 'Aguardando retirada']
 ];
 const ST = Object.fromEntries(STATUS);
 const FECHADAS = ['entregue', 'sem_conserto'];

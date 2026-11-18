@@ -26,6 +26,7 @@ function mensagemZap(o) {
     case 'aguardando_peca': return montarMsg(nome, 'O conserto está *aguardando a chegada de uma peça*. ⏳', [dAp, dOs, 'Assim que ela chegar, avisamos você.'], link);
     case 'em_conserto': return montarMsg(nome, 'Seu aparelho já está *em conserto*. 🔧', [dAp, dOs], link);
     case 'pronto': return montarMsg(nome, 'Boa notícia: seu aparelho está *PRONTO* para retirada! 🎉', [dAp, dOs, dVal, dEnd]);
+    case 'aguardando_retirada': return montarMsg(nome, 'Seu aparelho está aqui conosco, *aguardando retirada*. 📦', [dAp, dOs, dVal, dEnd, '', 'Quando puder, é só passar aqui para buscar. 🙂']);
     case 'nao_aprovado': return montarMsg(nome, 'Entendemos que você optou por *não fazer o conserto* agora. 👍', [dAp, dOs, 'Seu aparelho já pode ser retirado aqui conosco.', dEnd, '', 'Se mudar de ideia, é só nos chamar. 🙂']);
     case 'sem_conserto': return montarMsg(nome, 'Infelizmente seu aparelho *não tem conserto*.' + (o.diagnostico ? ' Motivo: ' + o.diagnostico + '.' : ''), [dAp, dOs, 'Ele já pode ser retirado aqui conosco.', dEnd]);
     default: return montarMsg(nome, 'Obrigado por escolher a ' + empresa() + '! 🙏', [dAp, dOs, o.garantia_ate ? '🛡️ Garantia até *' + fmtDia(o.garantia_ate) + '*' : null, 'Qualquer coisa, estamos à disposição.'], link);
