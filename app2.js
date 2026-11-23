@@ -79,13 +79,9 @@ function cardOrdem(o) {
         <span class="badge st-${o.status}">${ST[o.status]}</span>
       </div>
       <div class="os-titulo">${esc([o.aparelho, o.marca, o.modelo].filter(Boolean).join(' · '))}</div>
-      <div>${esc(o.cliente_nome)}</div>
-      ${o.local || o.gaveta ? `<div class="small onde-l">📍 ${esc([o.gaveta ? 'Gaveta ' + o.gaveta : '', o.local].filter(Boolean).join(' · '))}</div>` : ''}
-      ${o.defeito ? `<div class="muted small" style="margin-top:4px">${esc(o.defeito.length > 90 ? o.defeito.slice(0, 90) + '…' : o.defeito)}</div>` : ''}
-      <div class="os-linha small muted" style="margin-top:6px">
-        <span>${o.tecnico ? '👤 ' + esc(nomeDe(o.tecnico)) + ' · ' : ''}Entrada ${fmtData(o.created_at)}${o.previsao ? ' · Prev. ' + fmtDia(o.previsao) : ''}</span>
-        ${gar ? '<span class="badge orc-aprovado">🛡️ Garantia</span>' : o.orcamento_status !== 'sem' && !FECHADAS.includes(o.status) ? `<span class="badge orc-${o.orcamento_status}">${ORC[o.orcamento_status]}</span>` : ''}
-      </div>
+      <div class="os-cli">${esc(o.cliente_nome)}</div>
+      ${o.local || o.gaveta ? `<div class="onde-l">📍 ${esc([o.gaveta ? 'Gaveta ' + o.gaveta : '', o.local].filter(Boolean).join(' · '))}</div>` : ''}
+      ${gar ? '<div style="margin-top:6px"><span class="badge orc-aprovado">🛡️ Garantia</span></div>' : o.orcamento_status !== 'sem' && !FECHADAS.includes(o.status) ? `<div style="margin-top:6px"><span class="badge orc-${o.orcamento_status}">${ORC[o.orcamento_status]}</span></div>` : ''}
     </div>`;
 }
 
