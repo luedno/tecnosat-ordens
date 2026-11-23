@@ -30,11 +30,7 @@ function formOrdem() {
       <label>Defeito relatado pelo cliente</label><textarea id="f-defeito">${v('defeito')}</textarea>
       <label>Senha / padrão de desbloqueio</label><input id="f-senha_aparelho" value="${v('senha_aparelho')}" autocomplete="off" placeholder="Se o cliente informar">
       <label>Previsão de entrega</label><input id="f-previsao" type="date" value="${v('previsao')}">
-      <label>📍 Onde está o aparelho</label>
-      <div class="linha2">
-        <div><label class="small">Gaveta</label><input id="f-gaveta" value="${v('gaveta')}" placeholder="Ex.: 3"></div>
-        <div><label class="small">Local</label><input id="f-local" value="${v('local')}" placeholder="Ex.: Estante B"></div>
-      </div>
+      <label>📍 Local do aparelho</label><textarea id="f-local" class="local-txt" placeholder="Ex.: gaveta 3, estante azul de cima">${v('local')}</textarea>
       <label>Observações</label><textarea id="f-observacoes" placeholder="Arranhões, estado do aparelho, etc.">${v('observacoes')}</textarea>
       <label>Técnico responsável</label>
       <select id="f-tecnico">
@@ -106,7 +102,7 @@ function formOrdem() {
   const btn = $('f-salvar');
   btn.onclick = async () => {
     const campos = {};
-    ['cliente_nome', 'cliente_telefone', 'aparelho', 'marca', 'modelo', 'numero_serie', 'acessorios', 'defeito', 'previsao', 'observacoes', 'senha_aparelho', 'gaveta', 'local']
+    ['cliente_nome', 'cliente_telefone', 'aparelho', 'marca', 'modelo', 'numero_serie', 'acessorios', 'defeito', 'previsao', 'observacoes', 'senha_aparelho', 'local']
       .forEach((k) => { campos[k] = val('f-' + k) || null; });
     campos.tecnico = val('f-tecnico') || null;
     campos.checklist = Array.from(marcados);

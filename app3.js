@@ -70,6 +70,11 @@ function telaOrdem() {
     </div>
 
     <div class="card">
+      <h3>📍 Local do aparelho</h3>
+      <textarea id="l-local" class="local-txt" placeholder="Onde o aparelho está guardado. Ex.: gaveta 3, estante azul de cima" data-orig="${esc(o.local || '')}">${esc(o.local || '')}</textarea>
+      <div class="btns"><button class="btn sec" id="salvarLocal">Salvar local</button></div>
+    </div>
+    <div class="card">
       <h3>Cliente</h3>
       <div style="font-size:18px;font-weight:700">${esc(o.cliente_nome)} ${cli ? '<a class="link small" href="#" id="verCli">ver cliente ›</a>' : ''}</div>
       ${o.cliente_telefone ? `<div><a class="link" href="tel:${esc(String(o.cliente_telefone).replace(/[^\d+]/g, ''))}">📞 ${esc(o.cliente_telefone)}</a></div>` : ''}
@@ -87,14 +92,6 @@ function telaOrdem() {
 
     <div class="card">
       <h3>Aparelho</h3>
-      <div class="onde">
-        <div class="onde-t">📍 Onde está</div>
-        <div class="linha2">
-          <div><label class="small">Gaveta</label><input id="l-gaveta" value="${esc(o.gaveta || '')}" data-orig="${esc(o.gaveta || '')}" placeholder="Ex.: 3"></div>
-          <div><label class="small">Local</label><input id="l-local" value="${esc(o.local || '')}" data-orig="${esc(o.local || '')}" placeholder="Ex.: Estante B"></div>
-        </div>
-        <button class="btn sec" id="salvarLocal" style="margin-top:6px">Salvar local</button>
-      </div>
       <dl class="info">
         ${campo('Aparelho', [o.aparelho, o.marca, o.modelo].filter(Boolean).join(' · '))}
         ${campo('Nº de série / IMEI', o.numero_serie)}
@@ -196,7 +193,7 @@ function telaOrdem() {
   if ($('verSenha')) $('verSenha').onclick = (e) => { e.preventDefault(); $('senha').textContent = o.senha_aparelho; e.target.remove(); };
   $('editar').onclick = () => ir('formOrdem', { ordemId: o.id, prefill: null, novasFotos: [] });
   $('entregar').onclick = () => ir('entrega');
-  $('salvarLocal').onclick = () => salvarOrdem(o.id, { gaveta: $('l-gaveta').value.trim() || null, local: $('l-local').value.trim() || null }, 'Local salvo');
+  $('salvarLocal').onclick = () => salvarOrdem(o.id, { local: $('l-local').value.trim() || null }, 'Local salvo');
   $('salvarDiag').onclick = () => salvarOrdem(o.id, { diagnostico: $('diag').value.trim() || null }, 'Diagnóstico salvo');
   if ($('salvarOrc')) $('salvarOrc').onclick = async () => {
     const bruto = val('orcValor').replace(/\./g, '').replace(',', '.');
