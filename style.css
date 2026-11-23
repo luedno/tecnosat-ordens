@@ -157,6 +157,10 @@ a.link { color: var(--azul); }
 .c-termos { margin-top: 12px; font-size: 11.5px; }
 .c-termos ul { margin: 4px 0 0; padding-left: 18px; }
 .c-assin { display: flex; justify-content: space-between; gap: 20px; margin-top: 40px; text-align: center; font-size: 12px; }
+.onde { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+.onde-t { font-weight: 700; color: #075985; }
+.onde .mic { margin-top: 4px; }
+.onde-l { color: #075985; font-weight: 600; margin-top: 2px; }
 .h-kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .h-kpi div { background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: 10px; text-align: center; }
 .h-kpi b { display: block; font-size: 24px; }

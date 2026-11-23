@@ -416,7 +416,7 @@ function render() {
 }
 
 // ---------------------------------------------------------- microfone (fala vira texto)
-const CAMPOS_MIC = ['f-defeito', 'f-observacoes', 'diag', 'orcDet', 'nota', 'a-descricao'];
+const CAMPOS_MIC = ['f-gaveta', 'f-local', 'l-gaveta', 'l-local', 'f-defeito', 'f-observacoes', 'diag', 'orcDet', 'nota', 'a-descricao'];
 function ligarMic() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return; // navegador sem reconhecimento de voz: o botão não aparece

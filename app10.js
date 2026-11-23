@@ -67,6 +67,7 @@ function telaEtiqueta() {
         <div class="et-cli">${esc(o.cliente_nome)}</div>
         <div>${esc(ap)}</div>
         <div>Entrada ${fmtData(o.created_at)}</div>
+        ${o.gaveta || o.local ? '<div><b>📍 ' + esc([o.gaveta ? 'Gav. ' + o.gaveta : '', o.local].filter(Boolean).join(' · ')) + '</b></div>' : ''}
         ${o.cliente_telefone ? '<div>' + esc(o.cliente_telefone) + '</div>' : ''}
       </div>
     </div>`;

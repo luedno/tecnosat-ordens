@@ -58,7 +58,7 @@ function desenharLista() {
   const q = S.busca.toLowerCase().trim(), qd = digitos(q);
   const itens = base.filter(fAtual).filter((o) => {
     if (!q) return true;
-    const txt = [o.cliente_nome, o.aparelho, o.marca, o.modelo, o.defeito, o.numero_serie, '#' + o.numero, String(o.numero)].join(' ').toLowerCase();
+    const txt = [o.cliente_nome, o.aparelho, o.marca, o.modelo, o.defeito, o.numero_serie, o.gaveta ? 'gaveta ' + o.gaveta : '', o.local, '#' + o.numero, String(o.numero)].join(' ').toLowerCase();
     return txt.includes(q) || (qd.length >= 3 && digitos(o.cliente_telefone).includes(qd));
   });
   if (!itens.length) {
@@ -80,6 +80,7 @@ function cardOrdem(o) {
       </div>
       <div class="os-titulo">${esc([o.aparelho, o.marca, o.modelo].filter(Boolean).join(' · '))}</div>
       <div>${esc(o.cliente_nome)}</div>
+      ${o.gaveta || o.local ? `<div class="small onde-l">📍 ${esc([o.gaveta ? 'Gaveta ' + o.gaveta : '', o.local].filter(Boolean).join(' · '))}</div>` : ''}
       ${o.defeito ? `<div class="muted small" style="margin-top:4px">${esc(o.defeito.length > 90 ? o.defeito.slice(0, 90) + '…' : o.defeito)}</div>` : ''}
       <div class="os-linha small muted" style="margin-top:6px">
         <span>${o.tecnico ? '👤 ' + esc(nomeDe(o.tecnico)) + ' · ' : ''}Entrada ${fmtData(o.created_at)}${o.previsao ? ' · Prev. ' + fmtDia(o.previsao) : ''}</span>
